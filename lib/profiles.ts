@@ -150,7 +150,7 @@ export const NOTE_GENERATED =
   "Written from the title alone. Nothing is read from the game, and nothing is written to it.";
 
 export const NOTE_UNKNOWN =
-  "No profile on file. VICE AI writes one the first time you launch it.";
+  "No profile on file. AEGIS AI writes one the first time you launch it.";
 
 export const NOTE_WAITING =
   "Type anything you play. There is no supported-games list to be on.";

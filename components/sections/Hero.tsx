@@ -57,13 +57,13 @@ export default function Hero() {
             stagger={0.085}
             className="t-display-xl col-span-12 text-bone lg:col-span-8"
           >
-            <MaskLine className="whitespace-nowrap">
+            <MaskLine>
               Your World<span className="text-magenta">.</span>
             </MaskLine>
-            <MaskLine className="whitespace-nowrap">
+            <MaskLine>
               Your AI<span className="text-magenta">.</span>
             </MaskLine>
-            <MaskLine className="whitespace-nowrap">
+            <MaskLine>
               Your Story<span className="text-magenta">.</span>
             </MaskLine>
           </Reveal>

@@ -1,4 +1,4 @@
-# VICE AI — brief
+# AEGIS AI — brief
 
 > Your World. Your AI. Your Story.
 
@@ -10,12 +10,12 @@ play, remembers previous sessions, learns their playstyle, generates
 personalised challenges, and scores the moment with music.
 
 **It works with any game.** The player types a title — any title — and
-VICE AI generates a game profile for it. GTA VI is the default and the
+AEGIS AI generates a game profile for it. GTA VI is the default and the
 flagship, not the boundary. The long game is a new product category:
 **AI gaming companions** — an ecosystem where agents become part of how
 people play, explore and experience virtual worlds.
 
-There is no public GTA VI integration API for external agents. VICE AI
+There is no public GTA VI integration API for external agents. AEGIS AI
 ships as an independent companion app and modifies nothing in the game.
 "No mods, no injection" is a product claim and a legal position, not a
 limitation to apologise for.
@@ -23,7 +23,7 @@ limitation to apologise for.
 ## Architecture: how "any game" actually works
 
 The companion is assembled fresh on every turn from four parts. All four
-belong to VICE AI, and that is the point: nothing here is configuration
+belong to AEGIS AI, and that is the point: nothing here is configuration
 the player has to supply.
 
     GAME PROFILE   generated once per title, from nothing but the name
@@ -35,7 +35,7 @@ the player has to supply.
     LIVE CONTEXT   screen, audio, player input — what is happening NOW
          |
          v
-       MODEL       VICE AI's own. The player never sees a key, a
+       MODEL       AEGIS AI's own. The player never sees a key, a
          |         provider, or a model name.
          v
        VOICE
@@ -62,14 +62,14 @@ turn, so session 100 opens knowing what happened in session 1.
 **There is no bring-your-own-key path.** Two reasons, and the second
 matters more than the first. Asking a player to paste an API key before
 they can hear anything is a conversion wall — gamers do not have API
-keys. And handing inference to a model VICE AI cannot tune, version or
+keys. And handing inference to a model AEGIS AI cannot tune, version or
 test against gives away the one thing the product is actually judged on:
 whether the voice is any good. Inference is managed, always. The player
 types a game and hears a voice. That is the whole setup.
 
 ## Product surface
 
-0. **Any game** — the player names a title and VICE AI builds the game
+0. **Any game** — the player names a title and AEGIS AI builds the game
    profile. No per-title engineering, no waiting for support, no API key,
    no configuration. Type a title, hear a voice.
 1. **AI Co-Pilot** — voice companion. The player picks a personality.

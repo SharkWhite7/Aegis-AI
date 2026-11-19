@@ -30,8 +30,8 @@ export default function CoPilot() {
           stagger={0.085}
           className="t-display-m col-span-12 text-bone lg:col-span-6"
         >
-          <MaskLine className="whitespace-nowrap">Six voices.</MaskLine>
-          <MaskLine className="whitespace-nowrap">
+          <MaskLine>Six voices.</MaskLine>
+          <MaskLine>
             One seat<span className="text-magenta">.</span>
           </MaskLine>
         </Reveal>
@@ -87,6 +87,8 @@ export default function CoPilot() {
 
                     <div className="col-span-12 mt-3 lg:col-span-5 lg:mt-0">
                       <div className="flex items-baseline">
+                        {/* nowrap stays: the leader absorbs this name's
+                            width on one line, and these strings are ours. */}
                         <span className="t-display-s whitespace-nowrap text-bone">
                           {p.name}
                         </span>

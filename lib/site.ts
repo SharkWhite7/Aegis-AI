@@ -1,5 +1,5 @@
 export const SITE = {
-  name: "VICE AI",
+  name: "AEGIS AI",
   tagline: "Your World. Your AI. Your Story.",
   build: "0.1.0",
   stage: "PRE-ALPHA",

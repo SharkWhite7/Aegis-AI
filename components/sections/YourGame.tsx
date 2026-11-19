@@ -18,8 +18,8 @@ export default function YourGame() {
           stagger={0.085}
           className="t-display-m col-span-12 text-bone lg:col-span-6"
         >
-          <MaskLine className="whitespace-nowrap">Any title.</MaskLine>
-          <MaskLine className="whitespace-nowrap">
+          <MaskLine>Any title.</MaskLine>
+          <MaskLine>
             Not a shortlist<span className="text-magenta">.</span>
           </MaskLine>
         </Reveal>
@@ -30,10 +30,8 @@ export default function YourGame() {
           className="col-span-12 lg:col-span-5 lg:col-start-8"
         >
           <p className="t-body-lg text-bone-dim">
-            You type what you play. VICE AI reads up on it and writes the
-            profile before your first session — the map, the money, the
-            words people use. There is nothing to wait for and nothing to
-            configure.
+            You type what you play. AEGIS AI writes the profile before
+            your first session.
           </p>
         </Reveal>
       </div>

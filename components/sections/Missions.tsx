@@ -12,8 +12,8 @@ export default function Missions() {
           stagger={0.085}
           className="t-display-m col-span-12 text-bone lg:col-span-6"
         >
-          <MaskLine className="whitespace-nowrap">It writes</MaskLine>
-          <MaskLine className="whitespace-nowrap">
+          <MaskLine>It writes</MaskLine>
+          <MaskLine>
             The brief<span className="text-magenta">.</span>
           </MaskLine>
         </Reveal>
@@ -24,9 +24,8 @@ export default function Missions() {
           className="col-span-12 lg:col-span-5 lg:col-start-8"
         >
           <p className="t-body-lg text-bone-dim">
-            Nobody wrote these in advance. They come from what you actually
-            did last week, which is why they are not the same for anyone
-            else and not the same twice.
+            Nobody wrote these in advance. They come from what you did
+            last week.
           </p>
         </Reveal>
       </div>

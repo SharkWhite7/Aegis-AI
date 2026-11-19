@@ -12,8 +12,8 @@ export default function Audio() {
           stagger={0.085}
           className="t-display-m col-span-12 text-bone lg:col-span-6"
         >
-          <MaskLine className="whitespace-nowrap">It knows</MaskLine>
-          <MaskLine className="whitespace-nowrap">
+          <MaskLine>It knows</MaskLine>
+          <MaskLine>
             When to stop<span className="text-magenta">.</span>
           </MaskLine>
         </Reveal>
@@ -24,9 +24,8 @@ export default function Audio() {
           className="col-span-12 lg:col-span-5 lg:col-start-8"
         >
           <p className="t-body-lg text-bone-dim">
-            It reads the moment and scores it. Picking a record is the easy
-            half. The hard half is knowing the minute to play nothing at
-            all.
+            Picking a record is the easy half. Knowing the minute to play
+            nothing is the hard one.
           </p>
         </Reveal>
       </div>

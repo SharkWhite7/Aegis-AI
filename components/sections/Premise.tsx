@@ -25,10 +25,10 @@ export default function Premise() {
           stagger={0.085}
           className="t-display-l col-span-12 text-bone lg:col-span-7"
         >
-          <MaskLine className="whitespace-nowrap">The game</MaskLine>
-          <MaskLine className="whitespace-nowrap">Keeps score.</MaskLine>
-          <MaskLine className="whitespace-nowrap">It cannot</MaskLine>
-          <MaskLine className="whitespace-nowrap">
+          <MaskLine>The game</MaskLine>
+          <MaskLine>Keeps score.</MaskLine>
+          <MaskLine>It cannot</MaskLine>
+          <MaskLine>
             Remember<span className="text-magenta">.</span>
           </MaskLine>
         </Reveal>
@@ -41,9 +41,8 @@ export default function Premise() {
           <p className="t-lede text-bone-dim">
             Four hundred hours in, the game knows your completion percentage
             and nothing else. It was never listening — not to the run you
-            abandoned twice, not to the car you went back for, not to what
-            you said while you drove. A save file holds flags. It was never
-            built to hold a night.
+            abandoned twice, not to the car you went back for. A save file
+            holds flags. It was never built to hold a night.
           </p>
         </Reveal>
       </div>
