@@ -3,6 +3,8 @@ import Hero from "@/components/sections/Hero";
 import Premise from "@/components/sections/Premise";
 import CoPilot from "@/components/sections/CoPilot";
 import YourGame from "@/components/sections/YourGame";
+import Missions from "@/components/sections/Missions";
+import Audio from "@/components/sections/Audio";
 
 export default function Page() {
   return (
@@ -13,6 +15,8 @@ export default function Page() {
       <Premise />
       <CoPilot />
       <YourGame />
+      <Missions />
+      <Audio />
     </>
   );
 }

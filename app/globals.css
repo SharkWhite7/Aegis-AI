@@ -493,7 +493,17 @@ body {
 /* Full-bleed band: pulled to the viewport edge, with matching padding so
    its contents stay on the shell grid. A plain -(--shell-pad) only
    reaches the shell's padding edge, so above --container-shell + 2*pad
-   the band stops short of the viewport and the bleed reads as a mistake. */
+   the band stops short of the viewport and the bleed reads as a mistake.
+   The page alternates sides: hero right, premise left, audio right. */
+.bleed-right {
+  margin-right: calc(
+    -1 * (var(--shell-pad) + max(0px, (100vw - var(--container-shell)) / 2))
+  );
+  padding-right: calc(
+    var(--shell-pad) + max(0px, (100vw - var(--container-shell)) / 2)
+  );
+}
+
 .bleed-left {
   margin-left: calc(
     -1 * (var(--shell-pad) + max(0px, (100vw - var(--container-shell)) / 2))
