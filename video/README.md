@@ -22,6 +22,7 @@ no gameplay, no GTA footage, no stock, no licensed music.
 | `scenes/03-memory.html` | 16:9 · 1:1 | 18s | Memory is not the context window. Session 100 opens knowing session 1. |
 | `scenes/04-public.html` | 16:9 | 38s | Built in public: the real build bar, a real screenshot, the real banned list. |
 | `scenes/05-loop.html` | 1:1 · 16:9 | 6s | A seamless loop, one second per personality. |
+| `scenes/06-world.html` | 16:9 · 1:1 | 14s | The tagline travelling through a night world, with a composed 120 BPM track. |
 
 Masters are 1920×1080 and 1080×1080, H.264 High, yuv420p, 30fps, keyframe
 every second, AAC 256k at 48kHz, loudness normalised to −14 LUFS with a
@@ -46,6 +47,29 @@ node render.mjs scenes/01-voices.html --format 16x9 --out 01-voices-16x9
 Formats are `16x9`, `1x1`, `9x16`. Every size in `lib/stage.css` is in
 `vmin`, so type renders at the same optical size in all of them and only
 the measure changes.
+
+## 06, and the footage question
+
+`06-world` was cut against a reference the founder sent: GTA VI trailer
+material with 3D type composited into the scene. The footage is not usable
+— it is Rockstar's, the project forbids any game capture, and the reference
+was itself a third party's promo — but almost nothing that makes it work
+depends on the game. Two things do, and both were measured off the file
+rather than guessed:
+
+- **125 BPM, and 65% of the energy below 150 Hz.** Almost no air. The
+  weight is the whole effect. `audio/06-world.py` targets the same balance
+  from scratch at 120 BPM, which is the nearest tempo whose beat is a whole
+  number of frames at 30fps.
+- **The type lives in the scene**, with perspective, approaching and
+  passing the camera. That is a technique, not a licence.
+
+So the piece keeps the mechanic and supplies its own world: a night drive
+built from the design system's hairlines — the road, the posts, the lamps,
+a field of distant lights. The projection is done by hand rather than with
+CSS perspective, because a browser rasterises a 3D layer once and scales
+the bitmap, which arrives soft; computing `s = P / (P - z)` and setting
+`font-size` means the glyphs are drawn at the size they are seen at.
 
 ## Audio
 

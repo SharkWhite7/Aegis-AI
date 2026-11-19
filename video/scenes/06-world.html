@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>06 · Your World</title>
+<link rel="stylesheet" href="../lib/stage.css">
+<style>
+  /* A night drive built out of the design system's own hairlines.
+
+     There is no footage in this piece and no CSS 3D either. Every element
+     is placed by projecting a point in a camera space onto the frame by
+     hand — s = P / (P - z) — which keeps the type crisp at every scale.
+     A browser's own perspective rasterises a layer once and then scales
+     the bitmap, so a word rushing at the camera arrives soft; projecting
+     it ourselves means the glyphs are re-rendered at the size they are
+     actually drawn at. */
+
+  #top {
+    position: absolute; left: 7vmin; right: 7vmin; top: 6vmin;
+    display: flex; align-items: center; gap: 1.4vmin; z-index: 40;
+  }
+  #top .spacer { flex: 1 1 auto; }
+  #toprule {
+    position: absolute; left: 7vmin; right: 7vmin; top: 8.8vmin;
+    transform-origin: left; z-index: 40;
+  }
+
+  #road { position: absolute; inset: 0; overflow: hidden; }
+  .mark, .dash, .post, .lamp {
+    position: absolute; left: 0; top: 0;
+    background-color: var(--color-line);
+    will-change: transform;
+  }
+  .lamp { background-color: var(--color-magenta); }
+  #horizon {
+    position: absolute; left: 0; right: 0;
+    height: 1px; background-color: var(--color-line-hard);
+  }
+
+  /* Words are laid out at a base size and scaled by setting font-size, so
+     they stay sharp however close they get. */
+  .word {
+    position: absolute; left: 0; top: 0;
+    white-space: nowrap;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 64%;
+    line-height: 0.82;
+    letter-spacing: -0.028em;
+    text-transform: uppercase;
+    color: var(--color-bone);
+    will-change: transform;
+  }
+
+  #land {
+    position: absolute; left: 7vmin; right: 7vmin; top: 50%;
+    transform: translateY(-50%); z-index: 30;
+  }
+  #land .wordmark { font-size: 13vmin; }
+  #landrule {
+    display: block; height: 1px; background-color: var(--color-line);
+    margin: 4vmin 0 2.6vmin; transform-origin: left;
+  }
+  #land .row { display: flex; align-items: baseline; gap: 2vmin; }
+  #land .spacer { flex: 1 1 auto; }
+  #landtag { font-size: 2vmin; }
+
+  @media (max-aspect-ratio: 13/10) {
+    #land .wordmark { font-size: 10.5vmin; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="frame" style="padding:0">
+    <div id="road">
+      <i id="horizon"></i>
+    </div>
+
+    <header id="top">
+      <span class="dot"></span>
+      <span class="t-label">AEGIS AI</span>
+      <span class="spacer"></span>
+      <span class="t-label dim" id="phase">YOUR WORLD</span>
+    </header>
+    <hr class="rule" id="toprule">
+
+    <div id="land">
+      <span class="mask"><span class="wordmark" id="mark">AEGIS AI</span></span>
+      <i id="landrule"></i>
+      <div class="row">
+        <span class="t-mono dim" id="landtag">Your World. Your AI. Your Story.</span>
+        <span class="spacer"></span>
+        <span class="t-label mute" id="landstamp">PRE-ALPHA · BUILD 0.1.0 · NOT SHIPPED</span>
+      </div>
+    </div>
+  </div>
+  <div class="tex-vignette"></div>
+  <div class="tex-grain" id="grain"></div>
+</div>
+
+<script type="module">
+import { EASE, seg, clamp, lerp, noise, grain } from "../lib/timeline.js";
+
+const $ = (id) => document.getElementById(id);
+
+/* ── Tempo ───────────────────────────────────────────────────
+   120 BPM, so a beat is exactly 15 frames at 30fps and every cut
+   in the piece lands on a whole frame. The reference this was cut
+   against measured 124.8 BPM; 120 keeps the same feel and keeps
+   the grid integral, which matters more. */
+const BPM = 120;
+const BEAT = 60 / BPM;            // 0.5s
+const BEATS = 28;
+const DURATION = BEAT * BEATS;    // 14.0s
+const FPS = 30;
+
+/* ── Camera ──────────────────────────────────────────────────
+   Distances are in the frame's own pixels. Both masters are 1080
+   tall, so one projection serves 16:9 and 1:1 alike. */
+const P = 1000;                   // focal length
+const GY = 420;                   // ground, below the camera axis
+const STEP = 240;                 // spacing between road marks
+const N_MARK = 30;
+const DEPTH = N_MARK * STEP;
+/* Marks are allowed to travel past the camera plane. Stopping them at z = 0
+   caps the scale at 1, which leaves the road a narrow fan in the middle of
+   the frame instead of rushing out past the bottom corners. */
+const PAST = 420;
+const SPAN = DEPTH + PAST;
+const MARK_W = 2600;
+const POST_X = 1560;   // outside the road edge, not on it
+const POST_H = 250;
+
+const road = $("road");
+const mk = (cls) => { const e = document.createElement("i"); e.className = cls; road.appendChild(e); return e; };
+const marks = Array.from({ length: N_MARK }, () => mk("mark"));
+const dashes = Array.from({ length: N_MARK }, () => mk("dash"));
+const posts = [], lamps = [];
+for (let i = 0; i < N_MARK; i++) {
+  if (i % 3) { posts.push(null); lamps.push(null); continue; }
+  posts.push([mk("post"), mk("post")]);
+  lamps.push([mk("lamp"), mk("lamp")]);
+}
+
+/* ── Distant lights ──────────────────────────────────────────
+   Without them the upper half of the frame is empty black and the
+   drive has nothing to parallax against. Positions come from the
+   hash noise, never Math.random, so every render is the same. */
+const N_PT = 90;
+const pts = [];
+for (let i = 0; i < N_PT; i++) {
+  const el = mk("mark");
+  el.style.backgroundColor = i % 11 === 0 ? "var(--color-magenta)" : "var(--color-bone-mute)";
+  pts.push({
+    el,
+    x: (noise(i * 3.1) - 0.5) * 9000,
+    y: -lerp(60, 900, noise(i * 7.7)),
+    z0: noise(i * 13.3) * DEPTH,
+    big: noise(i * 5.5) > 0.86,
+  });
+}
+
+/* ── The words, in camera space ──────────────────────────────
+   The tagline is the piece. Each line is born far away on a beat
+   and passes the camera four beats later. */
+const SCRIPT = [
+  { text: "YOUR WORLD.", at: 2,  dur: 4, size: 170 },
+  { text: "YOUR AI.",    at: 6,  dur: 4, size: 170 },
+  { text: "YOUR STORY.", at: 10, dur: 4, size: 170 },
+  { text: "IT RUNS BESIDE THE GAME.", at: 14, dur: 4, size: 82 },
+  { text: "NOT INSIDE IT.",           at: 18, dur: 4, size: 124 },
+];
+const words = SCRIPT.map((w) => {
+  const el = document.createElement("span");
+  el.className = "word";
+  el.textContent = w.text;
+  /* The full stop carries the accent, exactly as it does on the site. */
+  if (w.text.endsWith(".")) {
+    el.textContent = w.text.slice(0, -1);
+    const dot = document.createElement("span");
+    dot.className = "magenta";
+    dot.textContent = ".";
+    el.appendChild(dot);
+  }
+  road.appendChild(el);
+  return el;
+});
+
+const LAND_AT = 22 * BEAT;        // the drive stops and the mark parks
+
+function draw(t, frame) {
+  grain($("grain"), frame);
+
+  const W = window.innerWidth, H = window.innerHeight;
+  const cx = W / 2, cy = H * 0.52;
+  $("horizon").style.top = `${Math.round(cy)}px`;
+  $("toprule").style.transform = `scaleX(${seg(t, 0.06, 1.2, EASE.outExpo)})`;
+
+  /* Travel. The drive runs at speed until the landing beat, then is
+     brought to a stop over two beats — the only easing in the world. */
+  const cruise = 1500;                       // px per second
+  const brake = 1 - seg(t, LAND_AT - 1.2, 2.0, EASE.outExpo);
+  const dist = t < LAND_AT - 1.2
+    ? t * cruise
+    : (LAND_AT - 1.2) * cruise +
+      (t - (LAND_AT - 1.2)) * cruise * Math.max(brake, 0);
+
+  for (let i = 0; i < N_MARK; i++) {
+    const z = -DEPTH + ((i * STEP + dist) % SPAN);
+    const s = P / (P - z);
+    const y = cy + GY * s;
+    /* In out of the far dark, out again once it is past the camera. */
+    const op = clamp((DEPTH + z) / (DEPTH * 0.62)) * (1 - clamp((z - 120) / 280));
+
+    const m = marks[i].style;
+    const w = MARK_W * s;
+    m.width = `${w}px`;
+    m.height = `${Math.max(1, s * 1.6)}px`;
+    m.transform = `translate3d(${cx - w / 2}px, ${y}px, 0)`;
+    m.opacity = String(op * 0.85);
+
+    /* Centre dashes: a segment of road, projected at both ends. */
+    const z2 = z - 120;
+    const s2 = P / (P - z2);
+    const y2 = cy + GY * s2;
+    const d = dashes[i].style;
+    d.width = `${Math.max(1, 7 * s)}px`;
+    d.height = `${Math.max(1, y - y2)}px`;
+    d.transform = `translate3d(${cx - 3.5 * s}px, ${y2}px, 0)`;
+    d.opacity = String(op * (i % 2 ? 0.0 : 0.9));
+
+    if (!posts[i]) continue;
+    const ph = POST_H * s;
+    for (const [k, sign] of [[0, -1], [1, 1]]) {
+      const px = cx + sign * POST_X * s;
+      const ps = posts[i][k].style;
+      ps.width = "1px";
+      ps.height = `${ph}px`;
+      ps.transform = `translate3d(${px}px, ${y - ph}px, 0)`;
+      ps.opacity = String(op * 0.7);
+      const ls = lamps[i][k].style;
+      const lw = Math.max(1, 5 * s);
+      ls.width = `${lw}px`;
+      ls.height = `${lw}px`;
+      ls.transform = `translate3d(${px - lw / 2}px, ${y - ph - lw / 2}px, 0)`;
+      ls.opacity = String(op);
+    }
+  }
+
+  for (const pt of pts) {
+    const z = -DEPTH + ((pt.z0 + dist) % SPAN);
+    const s = P / (P - z);
+    const w = Math.max(1, (pt.big ? 5 : 2.6) * s);
+    const st = pt.el.style;
+    st.width = `${w}px`;
+    st.height = `${w}px`;
+    st.transform = `translate3d(${cx + pt.x * s - w / 2}px, ${cy + pt.y * s - w / 2}px, 0)`;
+    st.opacity = String(
+      clamp((DEPTH + z) / (DEPTH * 0.5)) * (1 - clamp((z - 60) / 240)) * 0.75,
+    );
+  }
+
+  /* Words. z runs from far to past the camera across the window, so the
+     line is readable in the middle of its pass and blows out at the end. */
+  SCRIPT.forEach((w, i) => {
+    const t0 = w.at * BEAT, t1 = t0 + w.dur * BEAT;
+    const el = words[i];
+    if (t < t0 || t >= t1) { el.style.opacity = "0"; return; }
+    const u = (t - t0) / (t1 - t0);
+    /* Constant speed through z, stopping short of the focal plane: at
+       z = P the scale is a division by zero. Starting at -2400 rather
+       than far away spends more of the window in the readable band,
+       which is the whole reason the line is on screen. */
+    const z = lerp(-2400, 820, u);
+    const s = P / (P - z);
+    el.style.fontSize = `${w.size * s}px`;
+    /* The line leaves by outgrowing the frame, not by dimming. Fading a
+       word out while it is still legible is what made the first cut read
+       as grey type rather than as something going past the camera. */
+    el.style.opacity = String(clamp(u / 0.10) * clamp((1 - u) / 0.07));
+    /* Measured after the size is set, so the line is centred at whatever
+       width the condensed cut actually gives it. */
+    const bw = el.offsetWidth, bh = el.offsetHeight;
+    el.style.transform = `translate3d(${cx - bw / 2}px, ${cy - 40 * s - bh / 2}px, 0)`;
+  });
+
+  /* Landing. */
+  const lt = t - LAND_AT;
+  $("land").style.display = lt >= -0.4 ? "" : "none";
+  if (lt >= -0.4) {
+    const p = seg(lt, 0.0, 0.85, EASE.outExpo);
+    $("mark").style.translate = `0 ${(1 - p) * 132}%`;
+    $("landrule").style.transform = `scaleX(${seg(lt, 0.55, 1.0, EASE.outExpo)})`;
+    $("landtag").style.opacity = String(seg(lt, 0.85, 0.6, EASE.linear));
+    $("landstamp").style.opacity = String(seg(lt, 1.10, 0.6, EASE.linear));
+  }
+  $("phase").textContent = t < 14 * BEAT ? "YOUR WORLD" : t < LAND_AT ? "THE POSITION" : "PRE-ALPHA";
+}
+
+await document.fonts.ready;
+draw(0, 0);
+
+window.SCENE = { fps: FPS, duration: DURATION, draw, ready: true };
+</script>
+</body>
+</html>
