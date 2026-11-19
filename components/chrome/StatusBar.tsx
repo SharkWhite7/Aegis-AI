@@ -20,7 +20,7 @@ export default function StatusBar() {
   }, []);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-line bg-ink-deep/92">
+    <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-line bg-ink-deep">
       <div className="shell">
         <div className="flex h-[var(--bar-h)] items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">

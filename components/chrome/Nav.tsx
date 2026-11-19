@@ -18,7 +18,7 @@ export default function Nav() {
     <header
       className={`fixed inset-x-0 top-0 z-[80] border-b transition-colors duration-500 ${
         solid
-          ? "border-line bg-ink/95"
+          ? "border-line bg-ink"
           : "border-transparent bg-transparent"
       }`}
     >
