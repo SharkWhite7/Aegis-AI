@@ -4,8 +4,9 @@ import { useEffect, useRef } from "react";
 import { gsap, prefersReducedMotion } from "@/lib/motion/gsap";
 import { markBooted } from "@/lib/boot";
 import Wordmark from "@/components/chrome/Wordmark";
+import { SITE } from "@/lib/site";
 
-const KEY = "vice:booted";
+const KEY = "aegis:booted";
 
 const LINES: Array<[string, string]> = [
   ["companion runtime", "ready"],
@@ -104,7 +105,7 @@ export default function BootSequence() {
       ref={root}
       className="boot-overlay flex cursor-pointer items-center"
       role="status"
-      aria-label="Starting VICE AI"
+      aria-label={`Starting ${SITE.name}`}
     >
       <noscript>
         {/* Without JS the overlay would never lift. */}

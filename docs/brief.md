@@ -1,4 +1,4 @@
-# VICE AI — brief
+# AEGIS AI — brief
 
 > Your World. Your AI. Your Story.
 
@@ -13,7 +13,7 @@ GTA VI is the entry point, not the ceiling. The long game is a new product
 category: **AI gaming companions** — an ecosystem where agents become part
 of how people play, explore and experience virtual worlds.
 
-There is no public GTA VI integration API for external agents. VICE AI
+There is no public GTA VI integration API for external agents. AEGIS AI
 ships as an independent companion app and modifies nothing in the game.
 "No mods, no injection" is a product claim and a legal position, not a
 limitation to apologise for.
