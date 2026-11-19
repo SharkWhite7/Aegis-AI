@@ -24,7 +24,7 @@ export default function Hero() {
   return (
     <section
       id="top"
-      className="relative flex min-h-[100svh] flex-col justify-between overflow-hidden pt-[var(--nav-h)]"
+      className="relative flex min-h-[100svh] scroll-mt-[var(--nav-h)] flex-col justify-between overflow-hidden pt-[var(--nav-h)]"
     >
       {/* Field block, snapped to column 9 so its edge lands on the grid
           rather than at an arbitrary percentage, then bled off-screen.
@@ -52,6 +52,10 @@ export default function Hero() {
           </div>
           <div className="col-span-5 flex justify-end">
             <p className="t-label text-right text-bone-mute">
+              <span className="text-bone">{SITE.status}</span>
+              <span className="mx-2" aria-hidden>
+                &middot;
+              </span>
               Entry point &mdash; GTA VI
             </p>
           </div>

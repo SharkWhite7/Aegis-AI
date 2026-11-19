@@ -25,7 +25,7 @@ export default function Section({
   return (
     <section
       id={id}
-      className={`relative py-[var(--section-pad)] ${className}`}
+      className={`relative scroll-mt-[var(--nav-h)] py-[var(--section-pad)] ${className}`}
     >
       <div className="shell">
         {hairline && <hr className="rule mb-7" />}
