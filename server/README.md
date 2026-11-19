@@ -38,8 +38,12 @@ stub is how you demo plumbing and believe you heard the product.
 
 Built and tested:
 
-- **Waitlist capture** — the site's two "Request access" CTAs point at a
-  `#access` section that does not exist yet. See `WAITLIST-ENDPOINT.md`.
+- **Waitlist capture** — built and tested, but the site has no signup
+  form and currently collects no addresses: it was built when two CTAs
+  read "Request access", and they now read "Where it stands" and lead to
+  the build bar. Deferred rather than dropped — the site's own build bar
+  still lists Waitlist as a queued stage. Status and the endpoint
+  contract are in `WAITLIST-ENDPOINT.md`.
 - **Game profile generator** — any title in, a six-field profile out,
   generated once per title and shared by every player.
 - **Memory + per-turn digest** — stored outside the model, injected every
