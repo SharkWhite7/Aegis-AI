@@ -378,12 +378,42 @@ and I will not report the schema as working until it has been executed.
 
 ---
 
-## 5. Decisions I need before writing code
+## 5. Decisions taken
 
-1. **The waitlist endpoint crosses the boundary.** Which of the three
-   options in section 2 — site session adds it, I get permission for that
-   one file, or cross-origin to the service?
-2. **Postgres verification.** Provide a reachable dev Postgres URL, allow
-   the Docker daemon, or accept SQLite-verified-only for the first cut?
-3. **Scope order.** Confirm waitlist → profile generator → memory +
-   digest assembler, or reorder.
+All three open questions were answered. Recorded here because the first
+affects whoever owns `app/`.
+
+**1. Waitlist endpoint — I spec it, the site session builds it.**
+The file boundary stays intact. My side, under `server/`: the endpoint
+contract, request validation, storage and the data layer behind it. The
+site session's side: `app/api/waitlist/route.ts`, which calls into it.
+I will write the spec so that file is small and has no decisions left in
+it.
+
+**2. Datastore — Postgres, verified against a real dev instance.**
+A reachable dev Postgres URL is to be supplied. Until it exists I will
+write portable SQL behind the swappable data layer and verify what I can
+on `node:sqlite`, and I will not report the Postgres schema as working
+before it has run against Postgres.
+
+One note on how that URL should arrive, because both obvious routes have a
+problem. Environment variables on this environment are stored in plain
+text and shown in an approval prompt, so a connection string containing a
+real password does not belong in one; and the credential tool here is for
+HTTPS header secrets, explicitly not database passwords. That leaves two
+clean options:
+
+- A **throwaway dev instance** whose URL is not a meaningful secret, set
+  as an environment variable, with its host allowed through the network
+  policy.
+- **Allowing the Docker daemon**, so Postgres runs locally with no
+  credential to hand over at all.
+
+The second is the simpler form of the same request and needs nothing
+shared. Either works; the first needs a host and a disposable password.
+
+**3. Scope order — confirmed.**
+Waitlist capture, then the game profile generator, then the memory store
+with its per-turn digest assembler. Model orchestration, live context,
+voice, DJ and marketplace stay out of the first cut, for the reasons in
+section 1.
