@@ -1,0 +1,11 @@
+# Renders are heavy and reproducible. Nothing generated is committed.
+out/
+frames/
+
+# Raw page captures are intermediates: capture-site.mjs makes them again.
+# The two derived assets the scenes actually load are kept, so a clone can
+# render 04 without standing the site up first.
+shots/*.png
+!shots/access-wide.png
+!shots/full-strip.png
+__pycache__/

@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>01 · Six Voices</title>
+<link rel="stylesheet" href="../lib/stage.css">
+<style>
+  /* One block, optically centred, hard against the left margin. The quote
+     and its attribution are a single object: a gap between them is what
+     made the first cut read as two unfinished halves. */
+
+  #top {
+    position: absolute;
+    left: 7vmin; right: 7vmin; top: 6vmin;
+    display: flex; align-items: center; gap: 1.4vmin;
+  }
+  #top .spacer { flex: 1 1 auto; }
+  #toprule {
+    position: absolute;
+    left: 7vmin; right: 7vmin; top: 8.8vmin;
+    transform-origin: left;
+  }
+
+  #intro {
+    position: absolute;
+    left: 7vmin; right: 7vmin; top: 50%;
+    transform: translateY(-50%);
+  }
+  #intro .t-display-xl { font-size: 19vmin; }
+
+  #block {
+    position: absolute;
+    left: 7vmin; right: 7vmin; top: 50%;
+    transform: translateY(-50%);
+  }
+
+  #ts { display: flex; align-items: center; gap: 1.2vmin; margin-bottom: 2vmin; }
+
+  #lines { max-width: 66%; }
+
+  /* Column 9. The site breaks its grid here rather than centring, and the
+     frame needs weight on the right or the composition sits in one corner. */
+  #colrule {
+    position: absolute;
+    left: 71%; top: 11.5vmin; bottom: 9.5vmin;
+    width: 1px; background-color: var(--color-line);
+    transform-origin: top;
+  }
+  #side {
+    position: absolute;
+    left: 74%; right: 7vmin; top: 50%;
+    transform: translateY(-50%);
+  }
+  #side .row { margin-bottom: 2.6vmin; }
+  #side .k { display: block; margin-bottom: 0.9vmin; }
+  #side .v { display: block; font-size: 1.85vmin; }
+  #lines .mask { padding-bottom: 0.20em; margin-bottom: -0.10em; }
+
+  #nrule {
+    display: block; height: 1px; width: 24vmin;
+    background-color: var(--color-magenta);
+    margin: 4.4vmin 0 2.4vmin;
+    transform-origin: left;
+  }
+  #vrole { display: block; margin-top: 1.6vmin; font-size: 1.85vmin; }
+
+  #outro {
+    position: absolute;
+    left: 7vmin; right: 7vmin; top: 50%;
+    transform: translateY(-58%);
+  }
+  #outro .t-display-l { font-size: 9.6vmin; }
+  #outfoot { position: absolute; left: 7vmin; right: 7vmin; bottom: 10vmin; }
+  #outrule { transform-origin: left; margin-bottom: 2.6vmin; }
+  #outfoot .row { display: flex; align-items: baseline; gap: 2vmin; }
+  #outfoot .spacer { flex: 1 1 auto; }
+  #otag { font-size: 1.95vmin; }
+
+  #segs {
+    position: absolute;
+    left: 7vmin; right: 7vmin; bottom: 6vmin;
+    display: flex; gap: 0.6vmin;
+  }
+  .seg { height: 3px; flex: 1 1 0; background-color: var(--color-line-soft); }
+
+  #ruler { position: absolute; visibility: hidden; white-space: nowrap; left: -9999px; top: 0; }
+
+  /* Square and vertical cuts get the full measure — 76% of 1080 is too
+     narrow for a line of this length and starts breaking words oddly. */
+  @media (max-aspect-ratio: 13/10) {
+    #lines { max-width: 100%; }
+    #colrule, #side { display: none !important; }
+    #outro .t-display-l { font-size: 6.8vmin; }
+    #intro .t-display-xl { font-size: 16vmin; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="frame">
+    <header id="top">
+      <span class="dot"></span>
+      <span class="t-label">AEGIS AI</span>
+      <span class="spacer"></span>
+      <span class="t-label dim" id="idx">01 / 06</span>
+    </header>
+    <hr class="rule" id="toprule">
+
+    <div id="intro">
+      <span class="mask"><span class="t-display-xl" id="i1">SIX</span></span>
+      <span class="mask"><span class="t-display-xl" id="i2">VOICES<span class="magenta">.</span></span></span>
+    </div>
+
+    <div id="block">
+      <div id="ts">
+        <span class="t-label magenta" id="tsval">23:03</span>
+        <span class="t-label mute">CO-PILOT</span>
+      </div>
+      <div id="lines"></div>
+      <i id="nrule"></i>
+      <span class="mask"><span class="t-display-m" id="vname">THE HUSTLER</span></span>
+      <span class="t-mono dim" id="vrole"></span>
+    </div>
+
+    <i id="colrule"></i>
+    <div id="side">
+      <div class="row">
+        <span class="t-label mute k">SPECIALTY</span>
+        <span class="t-mono dim v" id="sspec"></span>
+      </div>
+      <div class="row">
+        <span class="t-label mute k">WON'T DO</span>
+        <span class="t-mono dim v" id="swont"></span>
+      </div>
+    </div>
+
+    <div id="outro">
+      <span class="mask"><span class="t-display-l" id="o1">SIX PERSONALITIES<span class="magenta">.</span></span></span>
+      <span class="mask"><span class="t-display-l" id="o2">ONE OF THEM</span></span>
+      <span class="mask"><span class="t-display-l" id="o3">BECOMES YOURS<span class="magenta">.</span></span></span>
+    </div>
+    <div id="outfoot">
+      <hr class="rule" id="outrule">
+      <div class="row">
+        <span class="t-mono dim" id="otag">Your World. Your AI. Your Story.</span>
+        <span class="spacer"></span>
+        <span class="t-label mute" id="ostamp">PRE-ALPHA · BUILD 0.1.0 · NOT SHIPPED</span>
+      </div>
+    </div>
+
+    <div id="segs"></div>
+    <span class="t-quote" id="ruler"></span>
+  </div>
+  <div class="tex-vignette"></div>
+  <div class="tex-grain" id="grain"></div>
+  <div class="sweep" id="sweep"></div>
+</div>
+
+<script type="module">
+import { EASE, seg, lerp, grain } from "../lib/timeline.js";
+import { VOICES } from "../lib/content.js";
+
+const $ = (id) => document.getElementById(id);
+
+/* ── Timing ──────────────────────────────────────────────────
+   Intro, six equal beats, outro. The beat is 3.8s: long enough to
+   read eighty characters at this size without hurrying, short
+   enough that six of them do not outstay the format.            */
+const INTRO = 1.60;
+const BEAT = 3.80;
+const OUTRO_AT = INTRO + BEAT * VOICES.length;   // 24.40
+const DURATION = OUTRO_AT + 5.60;                // 30.00
+
+const ruler = $("ruler");
+const linesBox = $("lines");
+
+/** Wrap by measuring the real face at the real size, not a character budget. */
+function wrap(text, maxPx) {
+  const out = [];
+  let line = "";
+  for (const word of text.split(" ")) {
+    const test = line ? line + " " + word : word;
+    ruler.textContent = test;
+    if (line && ruler.offsetWidth > maxPx) {
+      out.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+const beats = VOICES.map(() => null);
+let built = -1;
+
+function build(i) {
+  if (built === i) return;
+  built = i;
+  const v = VOICES[i];
+  linesBox.innerHTML = "";
+  const maxPx = linesBox.clientWidth;
+  const spans = [];
+  for (const text of wrap(v.line, maxPx)) {
+    const outer = document.createElement("span");
+    outer.className = "mask";
+    const inner = document.createElement("span");
+    inner.className = "t-quote";
+    inner.textContent = text;
+    outer.appendChild(inner);
+    linesBox.appendChild(outer);
+    spans.push(inner);
+  }
+  beats[i] = spans;
+  $("tsval").textContent = v.t;
+  $("vname").textContent = v.name.toUpperCase();
+  $("vrole").textContent = v.role;
+  $("sspec").textContent = v.specialty;
+  $("swont").textContent = v.wontDo;
+  $("idx").textContent =
+    `${String(i + 1).padStart(2, "0")} / ${String(VOICES.length).padStart(2, "0")}`;
+}
+
+const segs = [];
+for (let i = 0; i < VOICES.length; i++) {
+  const s = document.createElement("i");
+  s.className = "seg";
+  $("segs").appendChild(s);
+  segs.push(s);
+}
+
+const introLines = [$("i1"), $("i2")];
+const outLines = [$("o1"), $("o2"), $("o3")];
+const show = (el, on) => { el.style.display = on ? "" : "none"; };
+
+/* Every cut in the piece, so the wipe can be driven from one list. */
+const CUTS = [INTRO, OUTRO_AT];
+for (let i = 1; i < VOICES.length; i++) CUTS.push(INTRO + i * BEAT);
+
+function draw(t, frame) {
+  grain($("grain"), frame);
+
+  /* The chrome is composed at frame zero: that frame is the still X shows
+     in the timeline before anyone taps, so it is never half-built. */
+  $("toprule").style.transform = `scaleX(${seg(t, 0.06, 1.2, EASE.outExpo)})`;
+
+  const inIntro = t < INTRO;
+  const inOutro = t >= OUTRO_AT;
+  const inBeats = !inIntro && !inOutro;
+
+  show($("intro"), inIntro);
+  show($("block"), inBeats);
+  show($("side"), inBeats);
+  show($("colrule"), inBeats);
+  show($("outro"), inOutro);
+  show($("outfoot"), inOutro);
+  show($("segs"), !inOutro);
+  $("idx").style.opacity = inBeats ? "1" : "0";
+
+  if (inIntro) {
+    const outP = seg(t, INTRO - 0.46, 0.42, EASE.inExpo);
+    introLines.forEach((el, k) => {
+      el.style.translate = `0 ${-outP * 132 - k * outP * 14}%`;
+    });
+  }
+
+  if (inBeats) {
+    const i = Math.min(VOICES.length - 1, Math.floor((t - INTRO) / BEAT));
+    build(i);
+    const lt = t - INTRO - i * BEAT;
+    const outP = seg(lt, BEAT - 0.52, 0.38, EASE.inExpo);
+
+    beats[i].forEach((el, k) => {
+      const p = seg(lt, 0.14 + k * 0.10, 0.82, EASE.outExpo);
+      el.style.translate = `0 ${(1 - p) * 132 - outP * 132}%`;
+    });
+
+    $("ts").style.opacity = String(seg(lt, 0.02, 0.32, EASE.linear) * (1 - outP));
+
+    const nameP = seg(lt, 0.86, 0.74, EASE.outExpo);
+    $("vname").style.translate = `0 ${(1 - nameP) * 132 - outP * 132}%`;
+    $("nrule").style.transform = `scaleX(${seg(lt, 1.02, 0.72, EASE.outExpo) * (1 - outP)})`;
+    $("vrole").style.opacity = String(seg(lt, 1.28, 0.48, EASE.linear) * (1 - outP));
+    $("colrule").style.transform = `scaleY(${seg(lt, 0.20, 1.10, EASE.outExpo)})`;
+    $("side").style.opacity = String(seg(lt, 1.45, 0.55, EASE.linear) * (1 - outP));
+
+    segs.forEach((s, k) => {
+      if (k === i) {
+        s.style.backgroundColor = "var(--color-magenta)";
+        /* The site's seg-work pulse, written as a function of t so that a
+           re-render produces the same frame. */
+        s.style.opacity = String(0.4 + 0.6 * (0.5 + 0.5 * Math.cos((t / 2.4) * Math.PI * 2)));
+      } else {
+        s.style.backgroundColor = k < i ? "var(--color-bone)" : "var(--color-line-soft)";
+        s.style.opacity = "1";
+      }
+    });
+  }
+
+  if (inOutro) {
+    const lt = t - OUTRO_AT;
+    outLines.forEach((el, k) => {
+      const p = seg(lt, 0.44 + k * 0.17, 0.88, EASE.outExpo);
+      el.style.translate = `0 ${(1 - p) * 132}%`;
+    });
+    $("outrule").style.transform = `scaleX(${seg(lt, 1.90, 1.05, EASE.outExpo)})`;
+    $("otag").style.opacity = String(seg(lt, 2.20, 0.6, EASE.linear));
+    $("ostamp").style.opacity = String(seg(lt, 2.50, 0.6, EASE.linear));
+  }
+
+  let sweepX = -10;
+  for (const c of CUTS) {
+    if (t > c - 0.24 && t < c + 0.30) {
+      sweepX = lerp(-2, 102, seg(t, c - 0.24, 0.52, EASE.inOutQuint));
+    }
+  }
+  $("sweep").style.left = `${sweepX}%`;
+}
+
+/* Measuring has to happen in the real face. Laying the first beat out
+   before the webfonts resolve wraps it against the fallback — wider than
+   Archivo's condensed cut — and the line breaks mid-sense. Wait, then
+   build, then declare the scene ready. */
+await document.fonts.ready;
+build(0);
+draw(0, 0);
+
+window.SCENE = { fps: 30, duration: DURATION, draw, ready: true };
+</script>
+</body>
+</html>

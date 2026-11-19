@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>05 · Loop</title>
+<link rel="stylesheet" href="../lib/stage.css">
+<style>
+  /* A six-second loop, one second per personality. Everything on screen is
+     periodic in t with period 6, including the grain, so the last frame
+     hands over to the first without a seam. */
+
+  #top {
+    position: absolute; left: 7vmin; right: 7vmin; top: 6vmin;
+    display: flex; align-items: center; gap: 1.4vmin;
+  }
+  #top .spacer { flex: 1 1 auto; }
+  #toprule { position: absolute; left: 7vmin; right: 7vmin; top: 8.8vmin; }
+
+  #core {
+    position: absolute; left: 7vmin; right: 7vmin; top: 50%;
+    transform: translateY(-50%);
+  }
+  #mark { font-size: 13vmin; }
+  #corerule {
+    display: block; height: 1px; width: 26vmin;
+    background-color: var(--color-magenta);
+    margin: 4vmin 0 2.6vmin;
+  }
+  #name { font-size: 6.4vmin; }
+  #sub { display: block; margin-top: 2.4vmin; font-size: 1.9vmin; }
+
+  #segs {
+    position: absolute; left: 7vmin; right: 7vmin; bottom: 6vmin;
+    display: flex; gap: 0.6vmin;
+  }
+  .seg { height: 3px; flex: 1 1 0; background-color: var(--color-line-soft); }
+
+  #stamp { position: absolute; left: 7vmin; bottom: 9.6vmin; }
+
+  @media (max-aspect-ratio: 13/10) {
+    #mark { font-size: 11vmin; }
+    #name { font-size: 5.4vmin; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="frame">
+    <header id="top">
+      <span class="dot"></span>
+      <span class="t-label">AEGIS AI</span>
+      <span class="spacer"></span>
+      <span class="t-label dim">SIX PERSONALITIES</span>
+    </header>
+    <hr class="rule" id="toprule">
+
+    <div id="core">
+      <span class="wordmark" id="mark">AEGIS AI</span>
+      <i id="corerule"></i>
+      <span class="mask"><span class="t-display-s" id="name">THE HUSTLER</span></span>
+      <span class="t-mono dim" id="sub">One of them becomes yours.</span>
+    </div>
+
+    <span class="t-label mute" id="stamp">PRE-ALPHA · BUILD 0.1.0 · NOT SHIPPED</span>
+    <div id="segs"></div>
+  </div>
+  <div class="tex-vignette"></div>
+  <div class="tex-grain" id="grain"></div>
+</div>
+
+<script type="module">
+import { EASE, seg, grain } from "../lib/timeline.js";
+import { VOICES } from "../lib/content.js";
+
+const $ = (id) => document.getElementById(id);
+
+const PERIOD = 6.0;          // one second per voice
+const FPS = 30;
+const LOOP_FRAMES = PERIOD * FPS;
+
+const segs = [];
+for (let i = 0; i < VOICES.length; i++) {
+  const s = document.createElement("i");
+  s.className = "seg";
+  $("segs").appendChild(s);
+  segs.push(s);
+}
+
+const nameEl = $("name");
+
+function draw(t, frame) {
+  /* The grain tile is seated from the frame index modulo the loop, so the
+     texture is identical on the first and last frame. */
+  grain($("grain"), frame % LOOP_FRAMES);
+
+  const tt = t % PERIOD;
+
+  /* A name is held for one second. The 0.2 offset puts the handover off
+     the loop boundary, so nothing is mid-transition when the file wraps. */
+  const u = (tt + 0.2) % 1.0;
+  const i = Math.floor((tt + 0.2) % PERIOD);
+  nameEl.textContent = VOICES[i].name.toUpperCase();
+
+  const inP = seg(u, 0.00, 0.32, EASE.outExpo);
+  const outP = seg(u, 0.80, 0.18, EASE.inExpo);
+  nameEl.style.translate = `0 ${(1 - inP) * 132 - outP * 132}%`;
+
+  segs.forEach((s, k) => {
+    const on = k === Math.floor(tt);
+    s.style.backgroundColor = on ? "var(--color-magenta)" : "var(--color-line-soft)";
+    s.style.opacity = "1";
+  });
+}
+
+await document.fonts.ready;
+draw(0, 0);
+
+window.SCENE = { fps: FPS, duration: PERIOD, draw, ready: true };
+</script>
+</body>
+</html>

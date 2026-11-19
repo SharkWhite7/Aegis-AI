@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>03 · It Remembers</title>
+<link rel="stylesheet" href="../lib/stage.css">
+<style>
+  #top {
+    position: absolute; left: 7vmin; right: 7vmin; top: 6vmin;
+    display: flex; align-items: center; gap: 1.4vmin;
+  }
+  #top .spacer { flex: 1 1 auto; }
+  #toprule { position: absolute; left: 7vmin; right: 7vmin; top: 8.8vmin; transform-origin: left; }
+
+  .center {
+    position: absolute; left: 7vmin; right: 7vmin; top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Act 1 — the line, set larger than anywhere else in the campaign.
+     It is the only thing on screen for six seconds because it is the only
+     thing the piece is about. */
+  #ts { display: flex; align-items: center; gap: 1.2vmin; margin-bottom: 2.2vmin; }
+  #quote { max-width: 72%; }
+  #quote .t-quote { font-size: 7vmin; }
+  #qrule {
+    display: block; height: 1px; width: 24vmin;
+    background-color: var(--color-magenta);
+    margin: 4.6vmin 0 2.4vmin; transform-origin: left;
+  }
+
+  /* Act 2 — the mechanism, split across the grid: claim left, how it works
+     at column 8. */
+  #mech { display: flex; gap: 6vmin; align-items: flex-start; }
+  #mech .lhs { flex: 1 1 0; }
+  #mech .lhs .t-display-m { font-size: 7.4vmin; }
+  #mech .rhs { width: 32%; flex: none; padding-top: 1.4vmin; }
+  #mech .rhs p { font-size: 1.85vmin; line-height: 1.75; }
+  #mechrule { margin-bottom: 2.2vmin; transform-origin: left; }
+
+  /* Act 3 — the payoff sentence, broken across three display lines. */
+  #pay .t-display-m { font-size: 8.2vmin; }
+  #payfoot { position: absolute; left: 7vmin; right: 7vmin; bottom: 10vmin; }
+  #payrule { transform-origin: left; margin-bottom: 2.6vmin; }
+  #payfoot .row { display: flex; align-items: baseline; gap: 2vmin; }
+  #payfoot .spacer { flex: 1 1 auto; }
+  #paytag { font-size: 2vmin; }
+
+  @media (max-aspect-ratio: 13/10) {
+    #quote { max-width: 100%; }
+    #quote .t-quote { font-size: 5.8vmin; }
+    #mech { display: block; }
+    #mech .rhs { width: 100%; padding-top: 3.4vmin; }
+    #mech .lhs .t-display-m { font-size: 6.2vmin; }
+    #pay .t-display-m { font-size: 6.4vmin; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="frame">
+    <header id="top">
+      <span class="dot"></span>
+      <span class="t-label">AEGIS AI</span>
+      <span class="spacer"></span>
+      <span class="t-label dim" id="phase">PERSISTENT MEMORY</span>
+    </header>
+    <hr class="rule" id="toprule">
+
+    <div id="act1" class="center">
+      <div id="ts">
+        <span class="t-label magenta">01:03</span>
+        <span class="t-label mute">CO-PILOT</span>
+      </div>
+      <div id="quote"></div>
+      <i id="qrule"></i>
+      <span class="mask"><span class="t-display-s" id="who">THE COMPANION</span></span>
+    </div>
+
+    <div id="act2" class="center">
+      <div id="mech">
+        <div class="lhs">
+          <span class="mask"><span class="t-display-m" id="m1">MEMORY IS NOT</span></span>
+          <span class="mask"><span class="t-display-m" id="m2">THE CONTEXT</span></span>
+          <span class="mask"><span class="t-display-m" id="m3">WINDOW<span class="magenta">.</span></span></span>
+        </div>
+        <div class="rhs">
+          <hr class="rule" id="mechrule">
+          <p class="t-mono dim" id="mp1">A conversation that keeps its history only in the model's context loses it the moment the window rolls.</p>
+          <p class="t-mono dim" id="mp2" style="margin-top:1.6vmin">Memory is stored outside the model. A digest is injected every turn.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="act3" class="center">
+      <div id="pay">
+        <span class="mask"><span class="t-display-m" id="p1">SESSION 100 OPENS</span></span>
+        <span class="mask"><span class="t-display-m" id="p2">KNOWING WHAT HAPPENED</span></span>
+        <span class="mask"><span class="t-display-m" id="p3">IN SESSION 1<span class="magenta">.</span></span></span>
+      </div>
+    </div>
+    <div id="payfoot">
+      <hr class="rule" id="payrule">
+      <div class="row">
+        <span class="t-mono dim" id="paytag">Your World. Your AI. Your Story.</span>
+        <span class="spacer"></span>
+        <span class="t-label mute" id="paystamp">PRE-ALPHA · BUILD 0.1.0 · NOT SHIPPED</span>
+      </div>
+    </div>
+
+    <span class="t-quote" id="ruler" style="position:absolute;visibility:hidden;white-space:nowrap;left:-9999px;top:0;font-size:7vmin"></span>
+  </div>
+  <div class="tex-vignette"></div>
+  <div class="tex-grain" id="grain"></div>
+  <div class="sweep" id="sweep"></div>
+</div>
+
+<script type="module">
+import { EASE, seg, lerp, grain } from "../lib/timeline.js";
+import { MEMORY_LINE } from "../lib/content.js";
+
+const $ = (id) => document.getElementById(id);
+
+const P = {
+  act1: [0.00,  6.20],
+  act2: [6.20, 12.40],
+  act3: [12.40, 18.00],
+};
+const DURATION = P.act3[1];
+const CUTS = [P.act2[0], P.act3[0]];
+
+const ruler = $("ruler");
+function buildQuote() {
+  const box = $("quote");
+  const maxPx = box.clientWidth;
+  const spans = [];
+  let line = "";
+  const out = [];
+  for (const word of MEMORY_LINE.line.split(" ")) {
+    const test = line ? line + " " + word : word;
+    ruler.textContent = test;
+    if (line && ruler.offsetWidth > maxPx) { out.push(line); line = word; }
+    else line = test;
+  }
+  if (line) out.push(line);
+  for (const text of out) {
+    const outer = document.createElement("span");
+    outer.className = "mask";
+    const inner = document.createElement("span");
+    inner.className = "t-quote";
+    inner.textContent = text;
+    outer.appendChild(inner);
+    box.appendChild(outer);
+    spans.push(inner);
+  }
+  return spans;
+}
+
+let qlines = [];
+const mechLines = [$("m1"), $("m2"), $("m3")];
+const payLines = [$("p1"), $("p2"), $("p3")];
+const show = (el, on) => { el.style.display = on ? "" : "none"; };
+
+function draw(t, frame) {
+  grain($("grain"), frame);
+  $("toprule").style.transform = `scaleX(${seg(t, 0.06, 1.2, EASE.outExpo)})`;
+
+  const a1 = t < P.act2[0];
+  const a2 = t >= P.act2[0] && t < P.act3[0];
+  const a3 = t >= P.act3[0];
+  show($("act1"), a1);
+  show($("act2"), a2);
+  show($("act3"), a3);
+  show($("payfoot"), a3);
+  $("phase").textContent = a1 ? "PERSISTENT MEMORY" : a2 ? "HOW IT WORKS" : "WHAT IT BUYS YOU";
+
+  if (a1) {
+    const out = seg(t, P.act1[1] - 0.52, 0.42, EASE.inExpo);
+    $("ts").style.opacity = String(seg(t, 0.04, 0.34, EASE.linear) * (1 - out));
+    qlines.forEach((el, k) => {
+      /* Slower than anywhere else in the campaign. The line is a thing the
+         companion says about the player, and it should land like one. */
+      const p = seg(t, 0.22 + k * 0.30, 1.15, EASE.outExpo);
+      el.style.translate = `0 ${(1 - p) * 132 - out * 132}%`;
+    });
+    $("qrule").style.transform =
+      `scaleX(${seg(t, 1.95, 0.85, EASE.outExpo) * (1 - out)})`;
+    const wp = seg(t, 2.20, 0.85, EASE.outExpo);
+    $("who").style.translate = `0 ${(1 - wp) * 132 - out * 132}%`;
+  }
+
+  if (a2) {
+    const lt = t - P.act2[0];
+    const out = seg(lt, P.act2[1] - P.act2[0] - 0.50, 0.40, EASE.inExpo);
+    mechLines.forEach((el, k) => {
+      const p = seg(lt, 0.14 + k * 0.15, 0.92, EASE.outExpo);
+      el.style.translate = `0 ${(1 - p) * 132 - out * 132}%`;
+    });
+    $("mechrule").style.transform = `scaleX(${seg(lt, 0.85, 0.9, EASE.outExpo) * (1 - out)})`;
+    $("mp1").style.opacity = String(seg(lt, 1.15, 0.65, EASE.linear) * (1 - out));
+    $("mp2").style.opacity = String(seg(lt, 1.95, 0.65, EASE.linear) * (1 - out));
+  }
+
+  if (a3) {
+    const lt = t - P.act3[0];
+    payLines.forEach((el, k) => {
+      const p = seg(lt, 0.30 + k * 0.20, 0.95, EASE.outExpo);
+      el.style.translate = `0 ${(1 - p) * 132}%`;
+    });
+    $("payrule").style.transform = `scaleX(${seg(lt, 1.70, 1.05, EASE.outExpo)})`;
+    $("paytag").style.opacity = String(seg(lt, 2.05, 0.6, EASE.linear));
+    $("paystamp").style.opacity = String(seg(lt, 2.35, 0.6, EASE.linear));
+  }
+
+  let sweepX = -10;
+  for (const c of CUTS) {
+    if (t > c - 0.24 && t < c + 0.30) {
+      sweepX = lerp(-2, 102, seg(t, c - 0.24, 0.52, EASE.inOutQuint));
+    }
+  }
+  $("sweep").style.left = `${sweepX}%`;
+}
+
+await document.fonts.ready;
+qlines = buildQuote();
+draw(0, 0);
+
+window.SCENE = { fps: 30, duration: DURATION, draw, ready: true };
+</script>
+</body>
+</html>
