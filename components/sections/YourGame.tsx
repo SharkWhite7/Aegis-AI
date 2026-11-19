@@ -10,7 +10,7 @@ const STAYS: Array<[string, string, string]> = [
 
 export default function YourGame() {
   return (
-    <Section id="your-game" n="04" label="Your Game">
+    <Section id="your-game" n="03" label="Your Game">
       <div className="grid-12 items-end gap-y-10">
         <Reveal
           as="h2"
@@ -36,11 +36,11 @@ export default function YourGame() {
         </Reveal>
       </div>
 
-      <Reveal kind="fade" start="top 80%" className="mt-20 lg:mt-24">
+      <Reveal kind="fade" start="top 80%" className="mt-14 lg:mt-16">
         <ProfileFinder />
       </Reveal>
 
-      <Reveal kind="fade" start="top 85%" className="mt-20 lg:mt-24">
+      <Reveal kind="fade" start="top 85%" className="mt-14 lg:mt-16">
         <hr className="rule" />
         <ul className="grid-12 gap-y-9 pt-9">
           {STAYS.map(([n, head, body]) => (

@@ -3,11 +3,8 @@ import Hero from "@/components/sections/Hero";
 import Premise from "@/components/sections/Premise";
 import CoPilot from "@/components/sections/CoPilot";
 import YourGame from "@/components/sections/YourGame";
-import Missions from "@/components/sections/Missions";
-import Audio from "@/components/sections/Audio";
-import Memory from "@/components/sections/Memory";
+import Session from "@/components/sections/Session";
 import Market from "@/components/sections/Market";
-import Pricing from "@/components/sections/Pricing";
 import Access from "@/components/sections/Access";
 
 export default function Page() {
@@ -19,11 +16,8 @@ export default function Page() {
       <Premise />
       <CoPilot />
       <YourGame />
-      <Missions />
-      <Audio />
-      <Memory />
+      <Session />
       <Market />
-      <Pricing />
       <Access />
     </>
   );

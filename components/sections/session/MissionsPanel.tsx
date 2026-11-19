@@ -1,38 +1,17 @@
-import Reveal, { MaskLine } from "@/lib/motion/Reveal";
-import Section from "@/components/primitives/Section";
+import PanelHead from "./PanelHead";
 import { BRIEF, LEDGER } from "@/lib/missions";
 
-export default function Missions() {
+export default function MissionsPanel() {
   return (
-    <Section id="missions" n="05" label="Missions">
-      <div className="grid-12 items-end gap-y-10">
-        <Reveal
-          as="h2"
-          kind="mask"
-          stagger={0.085}
-          className="t-display-m col-span-12 text-bone lg:col-span-6"
-        >
-          <MaskLine>It writes</MaskLine>
-          <MaskLine>
-            The brief<span className="text-magenta">.</span>
-          </MaskLine>
-        </Reveal>
-
-        <Reveal
-          kind="fade"
-          delay={0.14}
-          className="col-span-12 lg:col-span-5 lg:col-start-8"
-        >
-          <p className="t-body-lg text-bone-dim">
-            Nobody wrote these in advance. They come from what you did
-            last week.
-          </p>
-        </Reveal>
-      </div>
+    <>
+      <PanelHead
+        head="It writes the brief"
+        lede="Nobody wrote these in advance. They come from what you did last week."
+      />
 
       {/* The brief: bracketed by rules, never boxed — the console and the
           profile card already own the panel. */}
-      <Reveal kind="fade" start="top 80%" className="mt-20 lg:mt-24">
+      <div className="mt-12 lg:mt-14">
         <div className="flex items-baseline justify-between gap-4 border-t border-line pt-4">
           <span className="t-label text-bone">Brief {BRIEF.no}</span>
           <span className="t-label text-bone-dim">Issued {BRIEF.issued}</span>
@@ -72,11 +51,11 @@ export default function Missions() {
             </div>
           </div>
         </div>
-      </Reveal>
+      </div>
 
       {/* The ledger: proof that these accumulate, including the ones that
           did not go well. */}
-      <Reveal kind="fade" start="top 85%" className="mt-16 lg:mt-20">
+      <div className="mt-10 lg:mt-12">
         <p className="t-label text-bone-dim">Ledger</p>
         <dl className="mt-5 border-b border-line">
           {LEDGER.map((row, i) => (
@@ -102,7 +81,7 @@ export default function Missions() {
             </div>
           ))}
         </dl>
-      </Reveal>
-    </Section>
+      </div>
+    </>
   );
 }

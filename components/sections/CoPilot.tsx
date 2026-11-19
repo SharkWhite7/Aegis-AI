@@ -22,7 +22,7 @@ const LEADER = "·".repeat(160);
  */
 export default function CoPilot() {
   return (
-    <Section id="co-pilot" n="03" label="Co-Pilot">
+    <Section id="co-pilot" n="02" label="Co-Pilot">
       <div className="grid-12 items-end gap-y-10">
         <Reveal
           as="h2"

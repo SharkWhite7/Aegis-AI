@@ -1,10 +1,11 @@
 import Reveal, { MaskLine } from "@/lib/motion/Reveal";
 import Section from "@/components/primitives/Section";
 import { SHEET, TERMS } from "@/lib/market";
+import { INCLUDED, CHANGE_LINE } from "@/lib/pricing";
 
 export default function Market() {
   return (
-    <Section id="market" n="08" label="Marketplace">
+    <Section id="market" n="05" label="Marketplace">
       <div className="grid-12 items-end gap-y-10">
         <Reveal
           as="h2"
@@ -91,6 +92,45 @@ export default function Market() {
           </ul>
         </Reveal>
       </div>
+
+      {/* Price. A sub-block rather than its own section: the sheet above
+          is what you make, this is what it costs to run it. One unbroken
+          run of items — there are no tiers to divide, and the absence of
+          dividing rules is the argument. */}
+      <Reveal kind="fade" start="top 85%" className="mt-12 lg:mt-14">
+        <hr className="rule" />
+        <div className="grid-12 mt-8 items-end gap-y-8">
+          <h3 className="t-display-s col-span-12 text-bone lg:col-span-4">
+            Free. Not forever<span className="text-magenta">.</span>
+          </h3>
+          <p className="t-body-lg col-span-12 text-bone-dim lg:col-span-6 lg:col-start-7">
+            Nothing is held back for a tier that does not exist yet. There is
+            no trial, no cap, and no locked row.
+          </p>
+        </div>
+
+        <p className="t-head mt-10 text-bone">
+          {INCLUDED.map((item, i) => (
+            <span key={item}>
+              {i > 0 && (
+                <span className="mx-3 text-bone-mute" aria-hidden>
+                  &middot;
+                </span>
+              )}
+              {item}
+            </span>
+          ))}
+        </p>
+
+        <div className="grid-12 mt-10 gap-y-5">
+          <p className="t-label col-span-12 text-bone-dim lg:col-span-3">
+            What happens later
+          </p>
+          <p className="t-body-lg col-span-12 text-bone lg:col-span-7 lg:col-start-5">
+            {CHANGE_LINE}
+          </p>
+        </div>
+      </Reveal>
     </Section>
   );
 }

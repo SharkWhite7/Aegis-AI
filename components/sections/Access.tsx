@@ -4,7 +4,7 @@ import BuildBar from "./access/BuildBar";
 
 export default function Access() {
   return (
-    <Section id="access" n="10" label="Access">
+    <Section id="access" n="06" label="Access">
       <div className="grid-12 items-end gap-y-10">
         <Reveal
           as="h2"
@@ -30,7 +30,7 @@ export default function Access() {
         </Reveal>
       </div>
 
-      <Reveal kind="fade" start="top 80%" className="mt-20 lg:mt-24">
+      <Reveal kind="fade" start="top 80%" className="mt-14 lg:mt-16">
         <div className="grid-12 gap-y-14">
           <div className="col-span-12 lg:col-span-5">
             <BuildBar />

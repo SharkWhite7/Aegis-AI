@@ -10,13 +10,10 @@ export const SITE = {
 } as const;
 
 export const NAV = [
-  { n: "02", label: "Premise", href: "#premise" },
-  { n: "03", label: "Co-Pilot", href: "#co-pilot" },
-  { n: "04", label: "Your Game", href: "#your-game" },
-  { n: "05", label: "Missions", href: "#missions" },
-  { n: "06", label: "Audio", href: "#audio" },
-  { n: "07", label: "Memory", href: "#memory" },
-  { n: "08", label: "Market", href: "#market" },
-  { n: "09", label: "Price", href: "#pricing" },
-  { n: "10", label: "Access", href: "#access" },
+  { n: "01", label: "Premise", href: "#premise" },
+  { n: "02", label: "Co-Pilot", href: "#co-pilot" },
+  { n: "03", label: "Your Game", href: "#your-game" },
+  { n: "04", label: "The Session", href: "#session" },
+  { n: "05", label: "Marketplace", href: "#market" },
+  { n: "06", label: "Access", href: "#access" },
 ] as const;

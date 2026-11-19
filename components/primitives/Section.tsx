@@ -29,7 +29,7 @@ export default function Section({
     >
       <div className="shell">
         {hairline && <hr className="rule mb-7" />}
-        <SectionLabel n={n} className="mb-12 lg:mb-16">
+        <SectionLabel n={n} className="mb-8 lg:mb-10">
           {label}
         </SectionLabel>
         {children}

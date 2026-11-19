@@ -17,7 +17,7 @@ const LEADER = "·".repeat(120);
 
 export default function Premise() {
   return (
-    <Section id="premise" n="02" label="Premise">
+    <Section id="premise" n="01" label="Premise">
       <div className="grid-12 items-end gap-y-14">
         <Reveal
           as="h2"
@@ -50,7 +50,7 @@ export default function Premise() {
       <Reveal kind="fade" start="top 78%">
         {/* Bracketed by a rule top and bottom. A bracket needs two sides;
             open at the top it is just the hero's facts list again. */}
-        <div className="grid-12 mt-20 lg:mt-24">
+        <div className="grid-12 mt-14 lg:mt-16">
           <dl className="col-span-12 border-y border-line lg:col-span-6">
             {RECORD.map(([k, v], i) => (
               <div
@@ -76,7 +76,7 @@ export default function Premise() {
 
         {/* Mirror of the hero's right-bled teal column, bled left, so the
             page alternates rather than repeats. */}
-        <div className="mt-20 lg:mt-24">
+        <div className="mt-14 lg:mt-16">
           <hr className="rule" />
           <div className="grid-12">
             <div className="bleed-left col-span-12 bg-teal py-16 lg:col-span-9 lg:py-20">
