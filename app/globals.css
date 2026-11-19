@@ -464,3 +464,41 @@ body {
   background-color: var(--color-ink);
   will-change: transform;
 }
+
+/* Pull quote — display family at head size but sentence case. `.t-head`
+   uppercases, which turns a sentence into a slogan. */
+.t-quote {
+  font-family: var(--font-display);
+  font-size: var(--t-head);
+  font-weight: 700;
+  font-stretch: 88%;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  text-transform: none;
+  text-wrap: balance;
+}
+
+/* Dot leader. Glyphs at a fixed pitch, clipped at the right edge — one
+   implementation site-wide. A dotted border at --color-line-soft (7%
+   alpha) is invisible, and a border leader cannot hold a fixed pitch,
+   which section 03's width-axis mechanism depends on. */
+.leader-dots {
+  flex: 1 1 0;
+  min-width: 2rem;
+  overflow: hidden;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Full-bleed band: pulled to the viewport edge, with matching padding so
+   its contents stay on the shell grid. A plain -(--shell-pad) only
+   reaches the shell's padding edge, so above --container-shell + 2*pad
+   the band stops short of the viewport and the bleed reads as a mistake. */
+.bleed-left {
+  margin-left: calc(
+    -1 * (var(--shell-pad) + max(0px, (100vw - var(--container-shell)) / 2))
+  );
+  padding-left: calc(
+    var(--shell-pad) + max(0px, (100vw - var(--container-shell)) / 2)
+  );
+}

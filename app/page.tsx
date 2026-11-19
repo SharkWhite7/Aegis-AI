@@ -1,5 +1,6 @@
 import BootSequence from "@/components/boot/BootSequence";
 import Hero from "@/components/sections/Hero";
+import Premise from "@/components/sections/Premise";
 
 export default function Page() {
   return (
@@ -7,6 +8,7 @@ export default function Page() {
       {/* Rendered first so its effect claims the boot gate before Hero waits on it. */}
       <BootSequence />
       <Hero />
+      <Premise />
     </>
   );
 }

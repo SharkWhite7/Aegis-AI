@@ -9,17 +9,69 @@ app running alongside GTA VI. It talks to the player by voice while they
 play, remembers previous sessions, learns their playstyle, generates
 personalised challenges, and scores the moment with music.
 
-GTA VI is the entry point, not the ceiling. The long game is a new product
-category: **AI gaming companions** — an ecosystem where agents become part
-of how people play, explore and experience virtual worlds.
+**It works with any game.** The player types a title — any title — and
+VICE AI generates a game profile for it. GTA VI is the default and the
+flagship, not the boundary. The long game is a new product category:
+**AI gaming companions** — an ecosystem where agents become part of how
+people play, explore and experience virtual worlds.
 
 There is no public GTA VI integration API for external agents. VICE AI
 ships as an independent companion app and modifies nothing in the game.
 "No mods, no injection" is a product claim and a legal position, not a
 limitation to apologise for.
 
+## Architecture: how "any game" actually works
+
+The companion is assembled fresh on every turn from four parts. All four
+belong to VICE AI, and that is the point: nothing here is configuration
+the player has to supply.
+
+    GAME PROFILE   generated once per title, from nothing but the name
+         +         carries the map, economy, mechanics and vocabulary
+    PERSONALITY    one of six, or one bought in the marketplace
+         +
+    MEMORY         everything from every prior session
+         +
+    LIVE CONTEXT   screen, audio, player input — what is happening NOW
+         |
+         v
+       MODEL       VICE AI's own. The player never sees a key, a
+         |         provider, or a model name.
+         v
+       VOICE
+
+Four things follow from this, and they are easy to get wrong:
+
+**The profile must carry the knowledge, not assume it.** GTA VI is not
+released. A general model knows nothing about its map, its economy or its
+slang. A profile that says "you are a companion for GTA VI" produces a
+companion that invents street names. The generator's job is to emit the
+content, not the instruction.
+
+**A prompt is not awareness.** A profile tells the companion about the
+game. It does not tell it that the player just pulled off the freeway.
+The hero's promise depends on the live-context channel, which is the hard
+part of this product and its actual moat. Anyone can generate a prompt.
+
+**Memory cannot live in the context window.** A conversation that keeps
+its history only in the model's context loses it the moment the window
+rolls — and with it the feature that makes the product worth a monthly
+fee. Memory is stored outside the model and a digest is injected every
+turn, so session 100 opens knowing what happened in session 1.
+
+**There is no bring-your-own-key path.** Two reasons, and the second
+matters more than the first. Asking a player to paste an API key before
+they can hear anything is a conversion wall — gamers do not have API
+keys. And handing inference to a model VICE AI cannot tune, version or
+test against gives away the one thing the product is actually judged on:
+whether the voice is any good. Inference is managed, always. The player
+types a game and hears a voice. That is the whole setup.
+
 ## Product surface
 
+0. **Any game** — the player names a title and VICE AI builds the game
+   profile. No per-title engineering, no waiting for support, no API key,
+   no configuration. Type a title, hear a voice.
 1. **AI Co-Pilot** — voice companion. The player picks a personality.
 2. **Dynamic missions** — AI-generated objectives from the player's
    preferences and context. e.g. *"Today you make money without weapons.
@@ -124,5 +176,15 @@ fits 8 columns at every width from 360px to 2560px.
   the hero: three lines of display type with magenta full stops, a live
   co-pilot console at columns 9–12, a lede and three numbered facts.
 
-Sections still to build: Premise, Co-Pilot, Missions, Audio/DJ, Memory,
-Marketplace, Architecture, Pricing, Horizon, Access, Footer.
+Sections still to build: Premise, Co-Pilot, Your Game, Missions, Audio/DJ,
+Memory, Marketplace, Architecture, Pricing, Horizon, Access, Footer.
+
+## The game selector
+
+The hero carries a game control. The visitor changes the game and the
+console transcript rewrites itself in that world. This is deliberate: the
+claim "works with any game" is proved by the interaction instead of
+asserted in copy. Going vague to sound universal — "your favourite
+world", "any open world" — is the single fastest way to make this site
+read as generated, and it is forbidden. Specificity is the house style;
+the game is simply a variable within it.
