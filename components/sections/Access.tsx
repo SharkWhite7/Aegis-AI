@@ -24,8 +24,8 @@ export default function Access() {
           className="col-span-12 lg:col-span-5 lg:col-start-8"
         >
           <p className="t-body-lg text-bone-dim">
-            There is no date, so there is no date on this page. What there
-            is, is where the build has actually got to.
+            No launch date yet, and this page will not invent one. What it
+            shows is where the build actually stands.
           </p>
         </Reveal>
       </div>
