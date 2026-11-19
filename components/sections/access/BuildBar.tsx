@@ -26,11 +26,11 @@ export default function BuildBar() {
         ))}
       </div>
 
-      <ol className="mt-8 border-b border-line">
+      <ol className="mt-6 border-b border-line">
         {STAGES.map((s, i) => (
           <li
             key={s.id}
-            className={`flex items-baseline gap-4 py-2.5 ${
+            className={`flex items-baseline gap-4 py-2 ${
               i === 0 ? "border-t border-line" : "border-t border-line-soft"
             }`}
           >
