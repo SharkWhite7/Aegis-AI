@@ -30,21 +30,13 @@ export default function Access() {
         </Reveal>
       </div>
 
+      {/* The build bar stands alone. There is no mailing-list promise
+          beside it, so it takes the width rather than leaving a column
+          of nothing where a pitch used to be. */}
       <Reveal kind="fade" start="top 80%" className="mt-14 lg:mt-16">
-        <div className="grid-12 gap-y-14">
-          <div className="col-span-12 lg:col-span-5">
+        <div className="grid-12">
+          <div className="col-span-12 lg:col-span-7">
             <BuildBar />
-          </div>
-
-          <div className="col-span-12 lg:col-span-6 lg:col-start-7">
-            <p className="t-head text-bone">
-              Leave an address and you hear from us once, when it opens.
-            </p>
-            <p className="t-small mt-6 text-bone-dim">
-              Once. Not a newsletter, not a drip sequence, not a launch
-              countdown. The next thing in your inbox from us is the thing
-              working.
-            </p>
           </div>
         </div>
       </Reveal>
