@@ -145,6 +145,35 @@ if (plate) {
     console.error("plate extraction failed");
     process.exit(1);
   }
+  /* Grade the plate from a measurement, not from a guess. A fixed
+     knockdown is wrong for every plate but one: footage of a bright sky
+     and footage of a night street are four stops apart, and a constant
+     brightness() either blows the first out or crushes the second to
+     black. Average the whole clip at thumbnail size and solve for the
+     factor that lands it where the drawn world sits. */
+  const probe = spawnSync("ffmpeg", [
+    "-v", "error", "-i", plate,
+    "-vf", "scale=48:27,format=gray", "-f", "rawvideo", "-",
+  ], { maxBuffer: 1 << 28 });
+  let meanY = 128;
+  if (probe.status === 0 && probe.stdout && probe.stdout.length) {
+    let sum = 0;
+    for (const v of probe.stdout) sum += v;
+    meanY = sum / probe.stdout.length;
+  }
+  const TARGET_Y = 52;          // where the drawn world sits
+  const bright = Math.min(1, Math.max(0.12, TARGET_Y / Math.max(meanY, 1)));
+  console.log(
+    `  plate mean luminance ${meanY.toFixed(1)}/255 -> brightness ${bright.toFixed(2)}`,
+  );
+  await page.evaluate((b) => {
+    const el = document.getElementById("plate");
+    /* Saturation comes most of the way down too: the palette is four
+       colours and the accent is supposed to be the only one in the frame.
+       Footage arriving in full colour takes the magenta's job. */
+    if (el) el.style.filter = `saturate(0.3) contrast(1.08) brightness(${b})`;
+  }, bright);
+
   const got = readdirSync(plateDir).length;
   if (got < frames) {
     console.error(

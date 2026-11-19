@@ -32,7 +32,10 @@
     display: none;
     /* Held back so the type reads over it. A plate at full strength and a
        hairline world on top of it fight each other. */
-    filter: saturate(0.72) contrast(1.06) brightness(0.62);
+    /* Replaced per render: render.mjs measures the plate and solves for a
+       brightness that lands it where the drawn world sits. This is only
+       the fallback for opening the scene by hand. */
+    filter: saturate(0.3) contrast(1.08) brightness(0.45);
   }
   #plate[src] { display: block; }
   /* With a plate present the drawn world gets out of the way entirely.
@@ -46,6 +49,13 @@
   body[data-plate] .win,
   body[data-plate] .car,
   body[data-plate] #horizon { opacity: 0 !important; }
+
+  #scrim {
+    position: absolute; left: 0; right: 0; top: 0; height: 13vmin;
+    background-color: var(--color-ink);
+    opacity: 0; z-index: 20;
+  }
+  body[data-plate] #scrim { opacity: 0.62; }
 
   #road { position: absolute; inset: 0; overflow: hidden; }
   .mark, .dash, .post, .lamp {
@@ -112,6 +122,12 @@
          the only thing on screen. Licensed or self-shot footage drops in
          here without touching anything else in the piece. -->
     <img id="plate" alt="">
+
+    <!-- A flat slate under the chrome, only when there is a plate. Mono
+         at label size does not survive over moving footage, and this is
+         how the site handles the same problem: a flat ink field, hard
+         edges, no blur and no gradient. -->
+    <i id="scrim"></i>
 
     <div id="road">
       <i id="horizon"></i>
