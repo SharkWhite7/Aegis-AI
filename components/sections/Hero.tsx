@@ -91,7 +91,7 @@ export default function Hero() {
           <div className="col-span-12 md:col-span-5">
             <p className="t-lede text-bone-dim">{SITE.description}</p>
             <a href="#access" className="btn-stamp mt-7">
-              Request access
+              Where it stands
               <span className="arrow" aria-hidden>
                 &#8594;
               </span>

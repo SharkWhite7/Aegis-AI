@@ -39,7 +39,7 @@ export default function Nav() {
               <IndexMenu />
             </span>
             <a href="#access" className="btn-stamp">
-              Request access
+              Where it stands
               <span className="arrow" aria-hidden>
                 &#8594;
               </span>
