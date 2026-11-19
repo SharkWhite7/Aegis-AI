@@ -1,0 +1,8 @@
+# The root .gitignore only ignores /node_modules at the repo root, so this
+# project needs its own entry.
+node_modules/
+
+# Local SQLite databases and their WAL sidecars.
+*.db
+*.db-wal
+*.db-shm

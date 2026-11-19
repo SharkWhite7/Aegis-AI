@@ -456,6 +456,140 @@ body {
   }
 }
 
+/* ──────────────────────────────────────────────────────────────
+   The book — one leaf per screen, turned rather than scrolled.
+   The frame owns the chrome offsets; the leaf owns the content and
+   is the only thing that may scroll, and only when a page overruns.
+   ────────────────────────────────────────────────────────────── */
+
+.book {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  padding-top: var(--nav-h);
+  padding-bottom: var(--bar-h);
+  overflow: hidden;
+  /* <main> already pads itself clear of the fixed status bar; the frame
+     does its own, so cancel the outer one rather than paying it twice. */
+  margin-bottom: calc(var(--bar-h) * -1);
+}
+
+/* Nothing outside the frame scrolls. */
+body:has(.book) {
+  overflow: hidden;
+}
+
+.book-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.book-leaf {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  /* `safe` matters: a plain centred flex column clips its own top when the
+     content overruns, and the first line is the one you cannot lose. */
+  justify-content: safe center;
+  padding-block: clamp(0.5rem, 2.2vh, 2rem);
+  animation: leaf-in 0.5s var(--ease-out-expo) both;
+}
+
+/* A leaf that overruns says so, rather than hiding the rest below a hard
+   edge. Set from the frame, which measures it. */
+.book-more {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 5rem;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--color-ink) 12%, transparent);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0.5rem;
+}
+
+.book-leaf[data-dir="-1"] {
+  animation-name: leaf-in-back;
+}
+
+@keyframes leaf-in {
+  from {
+    opacity: 0;
+    translate: 3.5% 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes leaf-in-back {
+  from {
+    opacity: 0;
+    translate: -3.5% 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Square, hard-edged, same family as .btn-stamp. */
+.btn-turn {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  border: 1px solid var(--color-line-hard);
+  background-color: transparent;
+  color: var(--color-bone);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.3s var(--ease-out-expo),
+    border-color 0.3s var(--ease-out-expo),
+    color 0.3s var(--ease-out-expo);
+}
+
+.btn-turn:hover:not(:disabled),
+.btn-turn:focus-visible:not(:disabled) {
+  background-color: var(--color-magenta);
+  border-color: var(--color-magenta);
+  color: var(--color-ink);
+}
+
+.btn-turn:disabled {
+  border-color: var(--color-line-soft);
+  color: var(--color-bone-mute);
+  cursor: default;
+}
+
+/* Where you are in the book, countable rather than a smooth bar. */
+.seg-turn {
+  height: 2px;
+  flex: 1 1 0;
+  min-width: 0;
+  background-color: var(--color-line);
+  transition: background-color 0.3s var(--ease-out-expo);
+}
+
+.seg-turn[data-state="read"] {
+  background-color: var(--color-bone-mute);
+}
+
+.seg-turn[data-state="here"] {
+  background-color: var(--color-magenta);
+}
+
 /* Boot overlay. Covers everything, including the fixed chrome. */
 .boot-overlay {
   position: fixed;

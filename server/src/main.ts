@@ -1,0 +1,54 @@
+/**
+ * Entry point.
+ *
+ * Picks the real model adapter when a managed credential is present and
+ * the deterministic stub when it is not, and says which out loud at boot.
+ * Starting silently on the stub is how you end up demoing plumbing and
+ * believing you heard the product.
+ */
+
+import { openSqlite } from "./db/sqlite.ts";
+import { seedBuiltinAgents } from "./marketplace/agents.ts";
+import { buildApp } from "./http/app.ts";
+import { StubModelAdapter } from "./model/stub.ts";
+import { AnthropicModelAdapter, hasManagedCredential } from "./model/anthropic.ts";
+import type { ModelAdapter } from "./model/adapter.ts";
+
+const dbPath = process.env["AEGIS_DB"] ?? "./aegis.db";
+const port = Number(process.env["PORT"] ?? 8787);
+const host = process.env["HOST"] ?? "127.0.0.1";
+
+const db = openSqlite(dbPath);
+const seeded = await seedBuiltinAgents(db);
+
+const live = hasManagedCredential();
+const model: ModelAdapter = live
+  ? new AnthropicModelAdapter()
+  : new StubModelAdapter();
+
+const app = buildApp({ db, model, logger: true });
+
+await app.listen({ port, host });
+
+app.log.info(
+  {
+    db: dbPath,
+    builtinAgentsInserted: seeded,
+    model: model.id,
+    inference: live ? "managed (live)" : "STUB — replies are placeholders",
+  },
+  "aegis server up",
+);
+
+if (!live) {
+  app.log.warn(
+    "No managed credential found, so every reply is a deterministic stub. " +
+      "Set ANTHROPIC_API_KEY to talk to the real model.",
+  );
+}
+
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.once(signal, () => {
+    void app.close().then(() => db.close()).then(() => process.exit(0));
+  });
+}
