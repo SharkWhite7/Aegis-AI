@@ -8,6 +8,14 @@ import { gsap, ScrollTrigger, prefersReducedMotion } from "./gsap";
  * Drives Lenis off the GSAP ticker so smooth scroll and ScrollTrigger
  * share one clock. Without this they fight and reveals fire early.
  */
+/* Module-level handle so an overlay can stop background scroll through
+   Lenis instead of fighting it with overflow:hidden. */
+let instance: Lenis | null = null;
+
+export function lenis() {
+  return instance;
+}
+
 export default function SmoothScroll() {
   useEffect(() => {
     if (prefersReducedMotion()) return;
@@ -19,6 +27,7 @@ export default function SmoothScroll() {
       touchMultiplier: 1.6,
     });
 
+    instance = lenis;
     lenis.on("scroll", ScrollTrigger.update);
 
     const tick = (time: number) => lenis.raf(time * 1000);
@@ -43,6 +52,7 @@ export default function SmoothScroll() {
     return () => {
       document.removeEventListener("click", onClick);
       gsap.ticker.remove(tick);
+      instance = null;
       lenis.destroy();
     };
   }, []);

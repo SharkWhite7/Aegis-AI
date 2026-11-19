@@ -5,6 +5,8 @@ import CoPilot from "@/components/sections/CoPilot";
 import YourGame from "@/components/sections/YourGame";
 import Missions from "@/components/sections/Missions";
 import Audio from "@/components/sections/Audio";
+import Memory from "@/components/sections/Memory";
+import Market from "@/components/sections/Market";
 
 export default function Page() {
   return (
@@ -17,6 +19,8 @@ export default function Page() {
       <YourGame />
       <Missions />
       <Audio />
+      <Memory />
+      <Market />
     </>
   );
 }

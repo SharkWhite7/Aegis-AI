@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { NAV } from "@/lib/site";
 import Wordmark from "./Wordmark";
+import IndexMenu from "./IndexMenu";
 
 export default function Nav() {
   const [solid, setSolid] = useState(false);
@@ -24,33 +24,20 @@ export default function Nav() {
     >
       <div className="shell">
         <div className="grid-12 h-[var(--nav-h)] items-center">
-          <div className="col-span-6 lg:col-span-3">
+          <div className="col-span-4 lg:col-span-3">
             <a href="#top" className="inline-block text-bone">
               <Wordmark />
             </a>
           </div>
 
-          <nav
-            aria-label="Sections"
-            className="col-span-6 hidden lg:flex lg:items-baseline lg:gap-8"
-          >
-            {NAV.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="group flex items-baseline gap-2"
-              >
-                <span className="t-label text-bone-mute transition-colors duration-300 group-hover:text-magenta">
-                  {item.n}
-                </span>
-                <span className="t-label text-bone-dim transition-colors duration-300 group-hover:text-bone">
-                  {item.label}
-                </span>
-              </a>
-            ))}
-          </nav>
+          <div className="col-span-6 hidden justify-center lg:flex">
+            <IndexMenu />
+          </div>
 
-          <div className="col-span-6 flex justify-end lg:col-span-3">
+          <div className="col-span-8 flex items-center justify-end gap-7 lg:col-span-3">
+            <span className="lg:hidden">
+              <IndexMenu />
+            </span>
             <a href="#access" className="btn-stamp">
               Request access
               <span className="arrow" aria-hidden>
