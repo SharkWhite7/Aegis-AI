@@ -71,6 +71,28 @@ CSS perspective, because a browser rasterises a 3D layer once and scales
 the bitmap, which arrives soft; computing `s = P / (P - z)` and setting
 `font-size` means the glyphs are drawn at the size they are seen at.
 
+## Using real footage
+
+`render.mjs` takes `--plate <file>`: a video the piece is composited over.
+
+```
+node render.mjs scenes/06-world.html --format 16x9 --plate drive.mp4
+```
+
+Frames are extracted up front at the render's own fps and crop, then fed in
+one at a time, so the plate advances in lockstep with `SCENE.draw(t)`
+rather than playing on its own clock — the same determinism the rest of the
+pipeline has. A plate shorter than the scene fails loudly with the two
+durations rather than rendering a piece that runs out of picture. With a
+plate present the drawn world hides itself and the type, chrome, vignette
+and grain stay.
+
+**Only footage the project holds the rights to goes in here**: licensed
+stock, or something shot for this. Game capture does not qualify, whoever
+captured it — it is the publisher's, and the campaign's whole position is
+that it does not overclaim. There is no point protecting that position in
+the copy and spending it on a background.
+
 ## Audio
 
 Synthesised from scratch in `audio/`: sines, noise, envelopes and

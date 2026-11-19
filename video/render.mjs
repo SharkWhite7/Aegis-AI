@@ -16,10 +16,10 @@
    NODE_PATH, which ESM resolution ignores. createRequire gets it back. */
 import { createRequire } from "node:module";
 const { chromium } = createRequire(import.meta.url)("playwright");
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, rmSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -86,6 +86,13 @@ if (!format) {
   process.exit(1);
 }
 
+/* An optional background plate: a video the piece is composited over.
+   Frames are extracted up front at the render's own fps and size, then fed
+   in one at a time, so the plate advances in lockstep with SCENE.draw(t)
+   instead of playing on its own clock. Use it for footage you hold the
+   rights to — licensed stock, or your own camera. */
+const plate = arg("plate", null);
+
 const sceneName = path.basename(scenePath, ".html");
 const outName = arg("out", `${sceneName}-${formatKey}`);
 const outDir = path.join(ROOT, "out");
@@ -119,6 +126,35 @@ const meta = await page.evaluate(() => ({
 const fps = Number(arg("fps", meta.fps));
 const duration = Number(arg("duration", meta.duration));
 const frames = Math.round(fps * duration);
+
+let plateDir = null;
+if (plate) {
+  plateDir = path.join(outDir, `_plate-${sceneName}-${formatKey}`);
+  rmSync(plateDir, { recursive: true, force: true });
+  mkdirSync(plateDir, { recursive: true });
+  console.log(`  extracting plate frames from ${plate} ...`);
+  const ex = spawnSync("ffmpeg", [
+    "-y", "-hide_banner", "-loglevel", "error",
+    "-i", plate,
+    "-vf", `fps=${fps},scale=${format.w}:${format.h}:force_original_aspect_ratio=increase,crop=${format.w}:${format.h}`,
+    "-frames:v", String(frames),
+    "-q:v", "2",
+    path.join(plateDir, "%05d.jpg"),
+  ], { stdio: "inherit" });
+  if (ex.status !== 0) {
+    console.error("plate extraction failed");
+    process.exit(1);
+  }
+  const got = readdirSync(plateDir).length;
+  if (got < frames) {
+    console.error(
+      `plate is too short: ${got} frames at ${fps}fps, scene needs ${frames} ` +
+      `(${(got / fps).toFixed(2)}s of ${duration}s)`,
+    );
+    process.exit(1);
+  }
+  await page.evaluate(() => { document.body.dataset.plate = "1"; });
+}
 
 if (errors.length) {
   console.error("page errors before render:\n" + errors.join("\n"));
@@ -168,6 +204,14 @@ const write = (buf) =>
 
 const started = Date.now();
 for (let f = 0; f < frames; f++) {
+  if (plateDir) {
+    const name = String(f + 1).padStart(5, "0") + ".jpg";
+    await page.evaluate((src) => {
+      const el = document.getElementById("plate");
+      if (el) el.src = src;
+    }, `/out/_plate-${sceneName}-${formatKey}/${name}`);  // root-absolute: the page
+    // itself is served from /scenes/, so a relative src resolves under it.
+  }
   await page.evaluate(
     ([t, i]) => window.SCENE.draw(t, i),
     [f / fps, f],

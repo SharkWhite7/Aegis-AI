@@ -25,6 +25,28 @@
     transform-origin: left; z-index: 40;
   }
 
+  #plate {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: none;
+    /* Held back so the type reads over it. A plate at full strength and a
+       hairline world on top of it fight each other. */
+    filter: saturate(0.72) contrast(1.06) brightness(0.62);
+  }
+  #plate[src] { display: block; }
+  /* With a plate present the drawn world gets out of the way entirely.
+     The footage is the world; what stays is the type, the chrome, the
+     vignette and the grain. */
+  body[data-plate] .mark,
+  body[data-plate] .dash,
+  body[data-plate] .post,
+  body[data-plate] .lamp,
+  body[data-plate] .bld,
+  body[data-plate] .win,
+  body[data-plate] .car,
+  body[data-plate] #horizon { opacity: 0 !important; }
+
   #road { position: absolute; inset: 0; overflow: hidden; }
   .mark, .dash, .post, .lamp {
     position: absolute; left: 0; top: 0;
@@ -32,6 +54,18 @@
     will-change: transform;
   }
   .lamp { background-color: var(--color-magenta); }
+  .bld {
+    position: absolute; left: 0; top: 0;
+    background-color: var(--color-ink-deep);
+    border-top: 1px solid var(--color-line);
+    will-change: transform;
+  }
+  .win, .car {
+    position: absolute; left: 0; top: 0;
+    background-color: var(--color-bone-mute);
+    will-change: transform;
+  }
+  .car { background-color: var(--color-bone); }
   #horizon {
     position: absolute; left: 0; right: 0;
     height: 1px; background-color: var(--color-line-hard);
@@ -73,6 +107,12 @@
 <body>
 <div class="stage">
   <div class="frame" style="padding:0">
+    <!-- Optional background plate. The renderer fills this per frame when
+         it is given --plate; with no plate it stays empty and the world is
+         the only thing on screen. Licensed or self-shot footage drops in
+         here without touching anything else in the piece. -->
+    <img id="plate" alt="">
+
     <div id="road">
       <i id="horizon"></i>
     </div>
@@ -161,6 +201,45 @@ for (let i = 0; i < N_PT; i++) {
   });
 }
 
+/* ── Skyline ─────────────────────────────────────────────────
+   Blocks of deeper ink with a lit top edge, far enough back that
+   they barely parallax — which is what makes the road in front of
+   them feel fast. Lit windows are the only warm thing out there. */
+const N_BLD = 24;
+const SKY_NEAR = 9000, SKY_SPAN = 15000;
+const blds = [];
+for (let i = 0; i < N_BLD; i++) {
+  const el = document.createElement("i");
+  el.className = "bld";
+  road.appendChild(el);
+  const wins = [];
+  const nw = 3 + Math.floor(noise(i * 2.3) * 5);
+  for (let k = 0; k < nw; k++) {
+    const q = document.createElement("i");
+    q.className = "win";
+    road.appendChild(q);
+    wins.push({ el: q, fx: noise(i * 31 + k * 3.7), fy: noise(i * 17 + k * 9.1) });
+  }
+  blds.push({
+    el, wins,
+    x: (noise(i * 1.7) - 0.5) * 11000,
+    w: 240 + noise(i * 4.9) * 520,
+    h: 340 + noise(i * 8.3) * 1250,
+    z0: noise(i * 6.1) * SKY_SPAN,
+  });
+}
+
+/* ── Oncoming traffic ────────────────────────────────────────
+   Pairs of lights in the far lane, closing faster than the road
+   moves. Five of them is enough to say the world is inhabited. */
+const N_CAR = 5;
+const cars = [];
+for (let i = 0; i < N_CAR; i++) {
+  const pair = [document.createElement("i"), document.createElement("i")];
+  for (const e of pair) { e.className = "car"; road.appendChild(e); }
+  cars.push({ pair, z0: noise(i * 11.9) * DEPTH * 1.6, x: -620 - noise(i * 5.3) * 420 });
+}
+
 /* ── The words, in camera space ──────────────────────────────
    The tagline is the piece. Each line is born far away on a beat
    and passes the camera four beats later. */
@@ -210,8 +289,13 @@ function draw(t, frame) {
     const z = -DEPTH + ((i * STEP + dist) % SPAN);
     const s = P / (P - z);
     const y = cy + GY * s;
-    /* In out of the far dark, out again once it is past the camera. */
-    const op = clamp((DEPTH + z) / (DEPTH * 0.62)) * (1 - clamp((z - 120) / 280));
+    /* In out of the far dark, out again once it is past the camera, and
+       brighter the closer it gets: a headlight falls off with distance,
+       and a road drawn at even weight all the way to the horizon is the
+       single thing that most makes a drive look like a diagram. */
+    const light = 0.18 + 0.82 * Math.pow(clamp((DEPTH + z) / DEPTH), 2.4);
+    const op = clamp((DEPTH + z) / (DEPTH * 0.62)) *
+               (1 - clamp((z - 120) / 280)) * light;
 
     const m = marks[i].style;
     const w = MARK_W * s;
@@ -245,6 +329,46 @@ function draw(t, frame) {
       ls.height = `${lw}px`;
       ls.transform = `translate3d(${px - lw / 2}px, ${y - ph - lw / 2}px, 0)`;
       ls.opacity = String(op);
+    }
+  }
+
+  for (const b of blds) {
+    /* Stays in [-(NEAR+SPAN), -NEAR]: the skyline is always far. The
+       first cut added SPAN back on and let the buildings run past the
+       camera, which put tower blocks on top of the type. */
+    const z = -(SKY_NEAR + SKY_SPAN) + ((b.z0 + dist * 0.5) % SKY_SPAN);
+    const s = P / (P - z);
+    const w = b.w * s, h = b.h * s;
+    const x = cx + b.x * s - w / 2;
+    const yb = cy + GY * s;
+    const st = b.el.style;
+    st.width = `${w}px`;
+    st.height = `${h}px`;
+    st.transform = `translate3d(${x}px, ${yb - h}px, 0)`;
+    st.opacity = "1";
+    for (const win of b.wins) {
+      const ws = Math.max(1, 3.4 * s);
+      const q = win.el.style;
+      q.width = `${ws}px`;
+      q.height = `${ws * 1.6}px`;
+      q.transform =
+        `translate3d(${x + win.fx * (w - ws)}px, ${yb - h + win.fy * h * 0.9}px, 0)`;
+      q.opacity = "0.75";
+    }
+  }
+
+  for (const car of cars) {
+    const z = -DEPTH * 1.6 + ((car.z0 + dist * 1.9) % (DEPTH * 1.6 + 300));
+    const s = P / (P - z);
+    const op = clamp((DEPTH * 1.6 + z) / (DEPTH * 0.9)) * (1 - clamp((z - 40) / 200));
+    const w = Math.max(1, 8 * s);
+    const yb = cy + (GY - 70) * s;
+    for (const [k, off] of [[0, -58], [1, 58]]) {
+      const st = car.pair[k].style;
+      st.width = `${w}px`;
+      st.height = `${Math.max(1, 5 * s)}px`;
+      st.transform = `translate3d(${cx + (car.x + off) * s - w / 2}px, ${yb}px, 0)`;
+      st.opacity = String(op);
     }
   }
 
