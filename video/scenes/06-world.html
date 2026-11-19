@@ -58,11 +58,24 @@
   body[data-plate] #scrim { opacity: 0.62; }
 
   #road { position: absolute; inset: 0; overflow: hidden; }
+  #worldlayer { position: absolute; inset: 0; will-change: transform; }
+  #rain { position: absolute; inset: 0; overflow: hidden; z-index: 25; pointer-events: none; }
+  .drop {
+    position: absolute; left: 0; top: 0;
+    background-color: var(--color-bone-dim);
+    will-change: transform;
+  }
   .mark, .dash, .post, .lamp {
     position: absolute; left: 0; top: 0;
     background-color: var(--color-line);
     will-change: transform;
   }
+  /* --color-line is 14% alpha, which is right for a hairline on a page and
+     far too faint for a road lit by headlights. The surface takes the hard
+     line and the lane markings take bone: they are painted, and paint in a
+     beam is the brightest thing in a night frame. */
+  .mark { background-color: var(--color-line-hard); }
+  .dash { background-color: var(--color-bone-mute); }
   .lamp { background-color: var(--color-magenta); }
   .bld {
     position: absolute; left: 0; top: 0;
@@ -76,6 +89,10 @@
     will-change: transform;
   }
   .car { background-color: var(--color-bone); }
+  /* Wet asphalt. A light on a dry road is a dot; on a wet one it has a
+     tail, and that tail is most of what makes night footage read as night
+     footage rather than as a dark diagram. */
+  .refl { position: absolute; left: 0; top: 0; will-change: transform; }
   #horizon {
     position: absolute; left: 0; right: 0;
     height: 1px; background-color: var(--color-line-hard);
@@ -130,8 +147,14 @@
     <i id="scrim"></i>
 
     <div id="road">
-      <i id="horizon"></i>
+      <!-- Everything in the world sits in here so camera roll can be
+           applied to the world without tilting the type with it. -->
+      <div id="worldlayer"><i id="horizon"></i></div>
     </div>
+
+    <!-- Rain is on the windscreen, not in the world: it does not roll with
+         the camera and it has no perspective. -->
+    <div id="rain"></div>
 
     <header id="top">
       <span class="dot"></span>
@@ -189,7 +212,25 @@ const POST_X = 1560;   // outside the road edge, not on it
 const POST_H = 250;
 
 const road = $("road");
-const mk = (cls) => { const e = document.createElement("i"); e.className = cls; road.appendChild(e); return e; };
+const worldLayer = $("worldlayer");
+const mk = (cls) => { const e = document.createElement("i"); e.className = cls; worldLayer.appendChild(e); return e; };
+
+/* ── The bend ────────────────────────────────────────────────
+   A dead straight road is the most diagram-like thing a drive can
+   do. The lateral offset of a point is a slow sine of its absolute
+   position along the road, minus the camera's own offset, so the
+   road always leaves the camera centred and curves away from it. */
+const BEND_A = 820;
+const BEND_L = 2900;
+const lat = (d, dist) =>
+  BEND_A * (Math.sin((dist + d) / BEND_L) - Math.sin(dist / BEND_L));
+
+/* ── The tunnel ──────────────────────────────────────────────
+   Bars three and four. The sky closes, a ceiling appears, the posts
+   grow into wall ribs, and it opens again — an act change in the
+   world to go with the one in the arrangement. */
+const TUN_IN = 12 * BEAT, TUN_OUT = 17 * BEAT;
+const CEIL = 330;
 const marks = Array.from({ length: N_MARK }, () => mk("mark"));
 const dashes = Array.from({ length: N_MARK }, () => mk("dash"));
 const posts = [], lamps = [];
@@ -197,6 +238,35 @@ for (let i = 0; i < N_MARK; i++) {
   if (i % 3) { posts.push(null); lamps.push(null); continue; }
   posts.push([mk("post"), mk("post")]);
   lamps.push([mk("lamp"), mk("lamp")]);
+}
+
+/* ── Tunnel ceiling and wet reflections ──────────────────────
+   The ceiling is the road again, mirrored above the camera axis.
+   Reflections are a streak under every light that touches tarmac. */
+const ceils = Array.from({ length: N_MARK }, () => mk("mark"));
+const lrefl = posts.map((p) => (p ? [mk("refl"), mk("refl")] : null));
+for (const pair of lrefl) {
+  if (pair) for (const e of pair) e.style.backgroundColor = "var(--color-magenta)";
+}
+
+/* ── Rain on the glass ───────────────────────────────────────
+   Screen space, no perspective. Most drops crawl; a few run. */
+const N_RAIN = 130;
+const rainBox = $("rain");
+const drops = [];
+for (let i = 0; i < N_RAIN; i++) {
+  const el = document.createElement("i");
+  el.className = "drop";
+  rainBox.appendChild(el);
+  const runner = noise(i * 4.4) > 0.80;
+  drops.push({
+    el, runner,
+    fx: noise(i * 2.9),
+    off: noise(i * 6.3),
+    spd: runner ? 0.55 + noise(i * 8.1) * 0.9 : 0.045 + noise(i * 3.3) * 0.075,
+    len: runner ? 26 + noise(i * 9.7) * 46 : 4 + noise(i * 5.1) * 9,
+    w: noise(i * 7.1) > 0.7 ? 2 : 1,
+  });
 }
 
 /* ── Distant lights ──────────────────────────────────────────
@@ -253,7 +323,9 @@ const cars = [];
 for (let i = 0; i < N_CAR; i++) {
   const pair = [document.createElement("i"), document.createElement("i")];
   for (const e of pair) { e.className = "car"; road.appendChild(e); }
-  cars.push({ pair, z0: noise(i * 11.9) * DEPTH * 1.6, x: -620 - noise(i * 5.3) * 420 });
+  const refl = [document.createElement("i"), document.createElement("i")];
+  for (const e of refl) { e.className = "refl"; e.style.backgroundColor = "var(--color-bone)"; worldLayer.appendChild(e); }
+  cars.push({ pair, refl, z0: noise(i * 11.9) * DEPTH * 1.6, x: -620 - noise(i * 5.3) * 420 });
 }
 
 /* ── The words, in camera space ──────────────────────────────
@@ -288,18 +360,29 @@ function draw(t, frame) {
   grain($("grain"), frame);
 
   const W = window.innerWidth, H = window.innerHeight;
-  const cx = W / 2, cy = H * 0.52;
-  $("horizon").style.top = `${Math.round(cy)}px`;
+  const cx = W / 2;
   $("toprule").style.transform = `scaleX(${seg(t, 0.06, 1.2, EASE.outExpo)})`;
 
   /* Travel. The drive runs at speed until the landing beat, then is
      brought to a stop over two beats — the only easing in the world. */
   const cruise = 1500;                       // px per second
   const brake = 1 - seg(t, LAND_AT - 1.2, 2.0, EASE.outExpo);
+  const moving = t < LAND_AT - 1.2 ? 1 : Math.max(brake, 0);
   const dist = t < LAND_AT - 1.2
     ? t * cruise
-    : (LAND_AT - 1.2) * cruise +
-      (t - (LAND_AT - 1.2)) * cruise * Math.max(brake, 0);
+    : (LAND_AT - 1.2) * cruise + (t - (LAND_AT - 1.2)) * cruise * moving;
+
+  /* Suspension, and it settles when the car does. Three incommensurate
+     sines rather than one: a single frequency reads as a bounce, and the
+     eye catches the loop in about two seconds. */
+  const cy = H * 0.52 +
+    (4.2 * Math.sin(t * 5.3) + 2.6 * Math.sin(t * 9.1) + 1.4 * Math.sin(t * 14.3)) * moving;
+  const roll = (0.17 * Math.sin(t * 3.1) + 0.09 * Math.sin(t * 7.7)) * moving;
+  worldLayer.style.transform = `rotate(${roll}deg)`;
+  $("horizon").style.top = `${Math.round(cy)}px`;
+
+  const tun = seg(t, TUN_IN, 0.55, EASE.inOutSine) *
+              (1 - seg(t, TUN_OUT - 0.55, 0.55, EASE.inOutSine));
 
   for (let i = 0; i < N_MARK; i++) {
     const z = -DEPTH + ((i * STEP + dist) % SPAN);
@@ -313,12 +396,26 @@ function draw(t, frame) {
     const op = clamp((DEPTH + z) / (DEPTH * 0.62)) *
                (1 - clamp((z - 120) / 280)) * light;
 
+    /* Where this slice of road sits sideways. World units, scaled by the
+       same s as everything else on it. */
+    const laneX = lat(-z, dist);
+
     const m = marks[i].style;
     const w = MARK_W * s;
     m.width = `${w}px`;
     m.height = `${Math.max(1, s * 1.6)}px`;
-    m.transform = `translate3d(${cx - w / 2}px, ${y}px, 0)`;
+    m.transform = `translate3d(${cx + laneX * s - w / 2}px, ${y}px, 0)`;
     m.opacity = String(op * 0.85);
+
+    /* The tunnel ceiling is the road again, mirrored above the axis. */
+    /* Narrower than the road and dimmer than it: a full-width lid reads as
+       a box, not as something overhead. */
+    const cw = w * 0.6;
+    const c = ceils[i].style;
+    c.width = `${cw}px`;
+    c.height = `${Math.max(1, s * 1.4)}px`;
+    c.transform = `translate3d(${cx + laneX * s - cw / 2}px, ${cy - CEIL * s}px, 0)`;
+    c.opacity = String(op * 0.4 * tun);
 
     /* Centre dashes: a segment of road, projected at both ends. */
     const z2 = z - 120;
@@ -327,13 +424,14 @@ function draw(t, frame) {
     const d = dashes[i].style;
     d.width = `${Math.max(1, 7 * s)}px`;
     d.height = `${Math.max(1, y - y2)}px`;
-    d.transform = `translate3d(${cx - 3.5 * s}px, ${y2}px, 0)`;
+    d.transform = `translate3d(${cx + laneX * s - 3.5 * s}px, ${y2}px, 0)`;
     d.opacity = String(op * (i % 2 ? 0.0 : 0.9));
 
     if (!posts[i]) continue;
-    const ph = POST_H * s;
+    /* Posts grow into wall ribs through the tunnel. */
+    const ph = POST_H * s * (1 + 1.7 * tun);
     for (const [k, sign] of [[0, -1], [1, 1]]) {
-      const px = cx + sign * POST_X * s;
+      const px = cx + (laneX + sign * POST_X) * s;
       const ps = posts[i][k].style;
       ps.width = "1px";
       ps.height = `${ph}px`;
@@ -345,6 +443,13 @@ function draw(t, frame) {
       ls.height = `${lw}px`;
       ls.transform = `translate3d(${px - lw / 2}px, ${y - ph - lw / 2}px, 0)`;
       ls.opacity = String(op);
+      /* The lamp's smear on wet tarmac, straight down from its own foot. */
+      const rs = lrefl[i][k].style;
+      const rl = 120 * s;
+      rs.width = `${Math.max(1, 3 * s)}px`;
+      rs.height = `${rl}px`;
+      rs.transform = `translate3d(${px - 1.5 * s}px, ${y}px, 0)`;
+      rs.opacity = String(op * 0.34 * (1 - tun));
     }
   }
 
@@ -361,7 +466,7 @@ function draw(t, frame) {
     st.width = `${w}px`;
     st.height = `${h}px`;
     st.transform = `translate3d(${x}px, ${yb - h}px, 0)`;
-    st.opacity = "1";
+    st.opacity = String(1 - tun);
     for (const win of b.wins) {
       const ws = Math.max(1, 3.4 * s);
       const q = win.el.style;
@@ -369,7 +474,7 @@ function draw(t, frame) {
       q.height = `${ws * 1.6}px`;
       q.transform =
         `translate3d(${x + win.fx * (w - ws)}px, ${yb - h + win.fy * h * 0.9}px, 0)`;
-      q.opacity = "0.75";
+      q.opacity = String(0.75 * (1 - tun));
     }
   }
 
@@ -379,12 +484,19 @@ function draw(t, frame) {
     const op = clamp((DEPTH * 1.6 + z) / (DEPTH * 0.9)) * (1 - clamp((z - 40) / 200));
     const w = Math.max(1, 8 * s);
     const yb = cy + (GY - 70) * s;
+    const laneX = lat(-z, dist);
     for (const [k, off] of [[0, -58], [1, 58]]) {
+      const px = cx + (laneX + car.x + off) * s;
       const st = car.pair[k].style;
       st.width = `${w}px`;
       st.height = `${Math.max(1, 5 * s)}px`;
-      st.transform = `translate3d(${cx + (car.x + off) * s - w / 2}px, ${yb}px, 0)`;
+      st.transform = `translate3d(${px - w / 2}px, ${yb}px, 0)`;
       st.opacity = String(op);
+      const rs = car.refl[k].style;
+      rs.width = `${Math.max(1, w * 0.5)}px`;
+      rs.height = `${Math.max(1, 90 * s)}px`;
+      rs.transform = `translate3d(${px - w * 0.25}px, ${yb + 8 * s}px, 0)`;
+      rs.opacity = String(op * 0.4);
     }
   }
 
@@ -397,7 +509,19 @@ function draw(t, frame) {
     st.height = `${w}px`;
     st.transform = `translate3d(${cx + pt.x * s - w / 2}px, ${cy + pt.y * s - w / 2}px, 0)`;
     st.opacity = String(
-      clamp((DEPTH + z) / (DEPTH * 0.5)) * (1 - clamp((z - 60) / 240)) * 0.75,
+      clamp((DEPTH + z) / (DEPTH * 0.5)) * (1 - clamp((z - 60) / 240)) * 0.75 * (1 - tun),
+    );
+  }
+
+  for (const d of drops) {
+    const yF = ((t * d.spd + d.off) % 1.25) - 0.12;
+    const st = d.el.style;
+    st.width = `${d.w}px`;
+    st.height = `${d.len}px`;
+    st.transform = `translate3d(${d.fx * W}px, ${yF * H}px, 0)`;
+    st.opacity = String(
+      (d.runner ? 0.26 : 0.14) * (0.4 + 0.6 * moving) *
+      clamp(yF / 0.04) * clamp((1.06 - yF) / 0.08),
     );
   }
 
