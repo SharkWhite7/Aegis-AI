@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>04 · Built in Public</title>
+<link rel="stylesheet" href="../lib/stage.css">
+<style>
+  #top {
+    position: absolute; left: 7vmin; right: 7vmin; top: 6vmin;
+    display: flex; align-items: center; gap: 1.4vmin;
+  }
+  #top .spacer { flex: 1 1 auto; }
+  #toprule { position: absolute; left: 7vmin; right: 7vmin; top: 8.8vmin; transform-origin: left; }
+
+  .center {
+    position: absolute; left: 7vmin; right: 7vmin; top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Act 1 */
+  #a1 .t-display-l { font-size: 11.4vmin; }
+  #a1rule {
+    display: block; height: 1px; width: 28vmin;
+    background-color: var(--color-magenta);
+    margin: 4.4vmin 0 2.6vmin; transform-origin: left;
+  }
+  #a1sub { font-size: 2vmin; }
+
+  /* Act 2 — the build, stage by stage. */
+  #build { position: absolute; left: 7vmin; right: 7vmin; top: 15vmin; }
+  #buildhead { display: flex; align-items: flex-end; gap: 3vmin; margin-bottom: 3.4vmin; }
+  #buildhead .t-display-m { font-size: 8.2vmin; }
+  #buildhead .cap { padding-bottom: 1.4vmin; }
+  #segrow { display: flex; gap: 0.6vmin; margin-bottom: 3.6vmin; }
+  .seg { height: 4px; flex: 1 1 0; background-color: var(--color-line-soft); }
+  .srow {
+    display: flex; align-items: baseline; gap: 2.4vmin;
+    padding: 1.05vmin 0; border-top: 1px solid var(--color-line-soft);
+  }
+  .srow .n { width: 3.4vmin; flex: none; }
+  .srow .lb { font-size: 2vmin; }
+  .srow .st { margin-left: auto; flex: none; }
+
+  /* Act 3 — the page itself, as a screenshot and as a sheet. */
+  #site { position: absolute; left: 7vmin; right: 7vmin; top: 52%; transform: translateY(-50%);
+          display: flex; gap: 4vmin; align-items: flex-start; }
+  #shotwrap { flex: 1 1 0; border: 1px solid var(--color-line); overflow: hidden; }
+  #shotwrap img { display: block; width: 100%; }
+  #sheetcol { width: 17%; flex: none; }
+  #sheet { height: 74vmin; overflow: hidden; border: 1px solid var(--color-line); position: relative; }
+  #sheet img { display: block; width: 100%; position: absolute; left: 0; }
+  #sitecap { margin-top: 2vmin; font-size: 1.75vmin; }
+
+  /* Act 4 — the doctrine. */
+  #doc { display: flex; gap: 6vmin; align-items: flex-start; }
+  #doc .lhs { width: 42%; flex: none; }
+  #doc .lhs .t-display-m { font-size: 7vmin; }
+  #doc .rhs { flex: 1 1 0; }
+  #doc .brow {
+    display: flex; align-items: baseline; gap: 2.2vmin;
+    padding: 1.25vmin 0; border-top: 1px solid var(--color-line-soft);
+  }
+  #doc .brow .x { color: var(--color-magenta); flex: none; }
+  #doc .brow .lb { font-size: 2vmin; }
+
+  /* Act 5 */
+  #a5 .t-display-m { font-size: 7.4vmin; }
+  #once { font-size: 16vmin; }
+  #a5foot { position: absolute; left: 7vmin; right: 7vmin; bottom: 10vmin; }
+  #a5rule { transform-origin: left; margin-bottom: 2.6vmin; }
+  #a5foot .row { display: flex; align-items: baseline; gap: 2vmin; }
+  #a5foot .spacer { flex: 1 1 auto; }
+  #a5tag { font-size: 2vmin; }
+
+  @media (max-aspect-ratio: 13/10) {
+    #a1 .t-display-l { font-size: 8vmin; }
+    #site { display: block; }
+    #sheetcol { display: none; }
+    #doc { display: block; }
+    #doc .lhs { width: 100%; margin-bottom: 3.4vmin; }
+    #once { font-size: 12vmin; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="frame">
+    <header id="top">
+      <span class="dot"></span>
+      <span class="t-label">AEGIS AI</span>
+      <span class="spacer"></span>
+      <span class="t-label dim" id="phase">BUILT IN PUBLIC</span>
+    </header>
+    <hr class="rule" id="toprule">
+
+    <div id="a1" class="center">
+      <span class="mask"><span class="t-display-l" id="x1">THIS DOES NOT</span></span>
+      <span class="mask"><span class="t-display-l" id="x2">EXIST YET<span class="magenta">.</span></span></span>
+      <i id="a1rule"></i>
+      <span class="t-mono dim" id="a1sub">No download. No demo. No launch date. The site says so in a fixed bar.</span>
+    </div>
+
+    <div id="build">
+      <div id="buildhead">
+        <span class="mask"><span class="t-display-m" id="bnum">03 OF 11</span></span>
+        <span class="t-label mute cap" id="bcap">STAGES SHIPPED</span>
+      </div>
+      <div id="segrow"></div>
+      <div id="srows"></div>
+    </div>
+
+    <div id="site">
+      <div>
+        <div id="shotwrap"><img id="shot" src="../shots/access-wide.png" alt=""></div>
+        <span class="t-mono dim" id="sitecap">The landing page, today. A screenshot of a web page — not of a product.</span>
+      </div>
+      <div id="sheetcol">
+        <div id="sheet"><img id="sheetimg" src="../shots/full-strip.png" alt=""></div>
+        <span class="t-label mute" id="sheetcap" style="display:block;margin-top:1.6vmin">THE WHOLE PAGE</span>
+      </div>
+    </div>
+
+    <div id="a4" class="center">
+      <div id="doc">
+        <div class="lhs">
+          <span class="mask"><span class="t-display-m" id="d1">IT HAD TO NOT</span></span>
+          <span class="mask"><span class="t-display-m" id="d2">LOOK GENERATED<span class="magenta">.</span></span></span>
+          <span class="t-mono dim" id="dsub" style="display:block;margin-top:2.6vmin;font-size:1.8vmin">Banned outright, in writing, before a line of CSS.</span>
+        </div>
+        <div class="rhs" id="brows"></div>
+      </div>
+    </div>
+
+    <div id="a5" class="center">
+      <span class="mask"><span class="t-display-m" id="y1">LEAVE AN ADDRESS AND YOU</span></span>
+      <span class="mask"><span class="t-display-m" id="y2">HEAR FROM US ONCE<span class="magenta">,</span></span></span>
+      <span class="mask"><span class="t-display-m" id="y3">WHEN IT OPENS<span class="magenta">.</span></span></span>
+      <span class="t-mono dim" id="y4" style="display:block;margin-top:3vmin;max-width:56%;font-size:1.85vmin"></span>
+    </div>
+    <div id="a5foot">
+      <hr class="rule" id="a5rule">
+      <div class="row">
+        <span class="t-mono dim" id="a5tag">Your World. Your AI. Your Story.</span>
+        <span class="spacer"></span>
+        <span class="t-label mute" id="a5stamp">PRE-ALPHA · BUILD 0.1.0 · NOT SHIPPED</span>
+      </div>
+    </div>
+  </div>
+  <div class="tex-vignette"></div>
+  <div class="tex-grain" id="grain"></div>
+  <div class="sweep" id="sweep"></div>
+</div>
+
+<script type="module">
+import { EASE, seg, lerp, grain } from "../lib/timeline.js";
+import { STAGES, BANNED, ACCESS_COPY } from "../lib/content.js";
+
+const $ = (id) => document.getElementById(id);
+
+const P = {
+  a1: [0.00,  6.00],
+  a2: [6.00, 14.60],
+  a3: [14.60, 21.60],
+  a4: [21.60, 29.60],
+  a5: [29.60, 38.00],
+};
+const DURATION = P.a5[1];
+const CUTS = [P.a2[0], P.a3[0], P.a4[0], P.a5[0]];
+
+$("y4").textContent = ACCESS_COPY;
+
+/* Act 2: the eleven stages, and eleven segments to count them with. */
+const segs = [];
+for (const [, , state] of STAGES) {
+  const s = document.createElement("i");
+  s.className = "seg";
+  s.dataset.state = state;
+  $("segrow").appendChild(s);
+  segs.push(s);
+}
+const srows = STAGES.map(([n, label, state]) => {
+  const row = document.createElement("div");
+  row.className = "srow";
+  const cls = state === "BUILDING" ? "magenta" : state === "SHIPPED" ? "dim" : "mute";
+  row.innerHTML =
+    `<span class="t-label mute n">${n}</span>
+     <span class="t-mono lb ${state === "QUEUED" ? "mute" : ""}">${label}</span>
+     <span class="t-label st ${cls}">${state}</span>`;
+  $("srows").appendChild(row);
+  return row;
+});
+
+/* Act 4: the banned list. */
+const brows = BANNED.map((text) => {
+  const row = document.createElement("div");
+  row.className = "brow";
+  row.innerHTML =
+    `<span class="t-label x">✕</span><span class="t-mono lb dim">${text}</span>`;
+  $("brows").appendChild(row);
+  return row;
+});
+
+const show = (el, on) => { el.style.display = on ? "" : "none"; };
+const inAct = (t, k) => t >= P[k][0] && t < P[k][1];
+
+function draw(t, frame) {
+  grain($("grain"), frame);
+  $("toprule").style.transform = `scaleX(${seg(t, 0.06, 1.2, EASE.outExpo)})`;
+
+  show($("a1"), inAct(t, "a1"));
+  show($("build"), inAct(t, "a2"));
+  show($("site"), inAct(t, "a3"));
+  show($("a4"), inAct(t, "a4"));
+  show($("a5"), t >= P.a5[0]);
+  show($("a5foot"), t >= P.a5[0]);
+
+  $("phase").textContent =
+    inAct(t, "a1") ? "BUILT IN PUBLIC"
+    : inAct(t, "a2") ? "THE BUILD"
+    : inAct(t, "a3") ? "WHAT EXISTS"
+    : inAct(t, "a4") ? "THE DOCTRINE"
+    : "ACCESS";
+
+  if (inAct(t, "a1")) {
+    const out = seg(t, P.a1[1] - 0.50, 0.42, EASE.inExpo);
+    [$("x1"), $("x2")].forEach((el, k) => {
+      const p = seg(t, 0.12 + k * 0.16, 0.92, EASE.outExpo);
+      el.style.translate = `0 ${(1 - p) * 132 - out * 132}%`;
+    });
+    $("a1rule").style.transform = `scaleX(${seg(t, 1.25, 0.85, EASE.outExpo) * (1 - out)})`;
+    $("a1sub").style.opacity = String(seg(t, 1.60, 0.65, EASE.linear) * (1 - out));
+  }
+
+  if (inAct(t, "a2")) {
+    const lt = t - P.a2[0];
+    const out = seg(lt, P.a2[1] - P.a2[0] - 0.46, 0.38, EASE.inExpo);
+    const np = seg(lt, 0.14, 0.88, EASE.outExpo);
+    $("bnum").style.translate = `0 ${(1 - np) * 132 - out * 132}%`;
+    $("bcap").style.opacity = String(seg(lt, 0.55, 0.45, EASE.linear) * (1 - out));
+    $("build").style.opacity = String(1 - out);
+
+    segs.forEach((s, i) => {
+      const on = seg(lt, 0.70 + i * 0.045, 0.30, EASE.outExpo);
+      const st = s.dataset.state;
+      s.style.backgroundColor =
+        st === "SHIPPED" ? "var(--color-bone)"
+        : st === "BUILDING" ? "var(--color-magenta)"
+        : "var(--color-line-soft)";
+      s.style.opacity = String(on);
+    });
+    /* Rows land in sequence. Eleven of them inside five seconds is a list
+       being read out, which is the point: it is a schedule, not a promise. */
+    srows.forEach((r, i) => {
+      const at = 1.35 + i * 0.30;
+      r.style.opacity = String(seg(lt, at, 0.42, EASE.linear));
+      const p = seg(lt, at, 0.55, EASE.outExpo);
+      r.style.translate = `${(1 - p) * -1.6}vmin 0`;
+    });
+  }
+
+  if (inAct(t, "a3")) {
+    const lt = t - P.a3[0];
+    const out = seg(lt, P.a3[1] - P.a3[0] - 0.46, 0.38, EASE.inExpo);
+    $("site").style.opacity = String(seg(lt, 0.10, 0.60, EASE.linear) * (1 - out));
+    /* The sheet pans the real page from top to bottom across the act, so
+       the viewer sees how much of it there is. */
+    const pan = seg(lt, 0.40, P.a3[1] - P.a3[0] - 1.1, EASE.inOutSine);
+    const img = $("sheetimg");
+    const travel = img.naturalHeight
+      ? img.clientHeight - $("sheet").clientHeight
+      : 0;
+    img.style.top = `${-pan * Math.max(0, travel)}px`;
+    $("sitecap").style.opacity = String(seg(lt, 0.80, 0.60, EASE.linear) * (1 - out));
+  }
+
+  if (inAct(t, "a4")) {
+    const lt = t - P.a4[0];
+    const out = seg(lt, P.a4[1] - P.a4[0] - 0.46, 0.38, EASE.inExpo);
+    [$("d1"), $("d2")].forEach((el, k) => {
+      const p = seg(lt, 0.14 + k * 0.16, 0.90, EASE.outExpo);
+      el.style.translate = `0 ${(1 - p) * 132 - out * 132}%`;
+    });
+    $("dsub").style.opacity = String(seg(lt, 0.90, 0.55, EASE.linear) * (1 - out));
+    brows.forEach((r, i) => {
+      const at = 1.10 + i * 0.52;
+      r.style.opacity = String(seg(lt, at, 0.40, EASE.linear) * (1 - out));
+      const p = seg(lt, at, 0.55, EASE.outExpo);
+      r.style.translate = `${(1 - p) * -1.8}vmin 0`;
+    });
+  }
+
+  if (t >= P.a5[0]) {
+    const lt = t - P.a5[0];
+    [$("y1"), $("y2"), $("y3")].forEach((el, k) => {
+      const p = seg(lt, 0.26 + k * 0.18, 0.92, EASE.outExpo);
+      el.style.translate = `0 ${(1 - p) * 132}%`;
+    });
+    $("y4").style.opacity = String(seg(lt, 1.40, 0.70, EASE.linear));
+    $("a5rule").style.transform = `scaleX(${seg(lt, 2.10, 1.05, EASE.outExpo)})`;
+    $("a5tag").style.opacity = String(seg(lt, 2.45, 0.6, EASE.linear));
+    $("a5stamp").style.opacity = String(seg(lt, 2.75, 0.6, EASE.linear));
+  }
+
+  let sweepX = -10;
+  for (const c of CUTS) {
+    if (t > c - 0.24 && t < c + 0.30) {
+      sweepX = lerp(-2, 102, seg(t, c - 0.24, 0.52, EASE.inOutQuint));
+    }
+  }
+  $("sweep").style.left = `${sweepX}%`;
+}
+
+await document.fonts.ready;
+/* The screenshots have to be decoded before frame zero, or the first act
+   that shows them renders an empty box. */
+await Promise.all([...document.images].map((i) => i.decode().catch(() => {})));
+draw(0, 0);
+
+window.SCENE = { fps: 30, duration: DURATION, draw, ready: true };
+</script>
+</body>
+</html>

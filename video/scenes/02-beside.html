@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>02 · Beside the Game</title>
+<link rel="stylesheet" href="../lib/stage.css">
+<style>
+  #top {
+    position: absolute; left: 7vmin; right: 7vmin; top: 6vmin;
+    display: flex; align-items: center; gap: 1.4vmin;
+  }
+  #top .spacer { flex: 1 1 auto; }
+  #toprule { position: absolute; left: 7vmin; right: 7vmin; top: 8.8vmin; transform-origin: left; }
+
+  .center {
+    position: absolute; left: 7vmin; right: 7vmin; top: 50%;
+    transform: translateY(-50%);
+  }
+
+  #open .t-display-l { font-size: 10.6vmin; }
+  #openrule {
+    display: block; height: 1px; width: 30vmin;
+    background-color: var(--color-magenta);
+    margin: 4.6vmin 0 2.8vmin; transform-origin: left;
+  }
+
+  /* The assembly. One row per part, read as a spec sheet rather than as a
+     diagram: four things, a dot leader, and what each one actually is. */
+  #stack { position: absolute; left: 7vmin; right: 7vmin; top: 19vmin; }
+  .row { padding: 2.1vmin 0 2.3vmin; }
+  .row .rule { transform-origin: left; }
+  .rowbody { display: flex; align-items: baseline; gap: 2.4vmin; padding-top: 2.1vmin; }
+  .rowbody .idx { width: 4vmin; flex: none; }
+  .rowbody .nm { flex: none; }
+  .rowbody .desc { width: 36%; flex: none; font-size: 1.8vmin; }
+  #result .rule { background-color: var(--color-magenta); }
+  #result .rowbody { padding-top: 2.6vmin; }
+
+  #claim .t-display-l { font-size: 12vmin; }
+
+  #end .wordmark { font-size: 9.5vmin; }
+  #endrule { transform-origin: left; margin: 4vmin 0 2.6vmin; }
+  #end .row2 { display: flex; align-items: baseline; gap: 2vmin; }
+  #end .spacer { flex: 1 1 auto; }
+  #endtag { font-size: 2vmin; }
+
+  @media (max-aspect-ratio: 13/10) {
+    #open .t-display-l { font-size: 7.4vmin; }
+    #claim .t-display-l { font-size: 8.6vmin; }
+    .rowbody { display: block; }
+    .rowbody .desc { width: 100%; display: block; margin-top: 0.9vmin; }
+    .rowbody .leader-dots { display: none; }
+    .rowbody .idx { display: inline-block; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="frame">
+    <header id="top">
+      <span class="dot"></span>
+      <span class="t-label">AEGIS AI</span>
+      <span class="spacer"></span>
+      <span class="t-label dim" id="phase">THE CATEGORY</span>
+    </header>
+    <hr class="rule" id="toprule">
+
+    <div id="open" class="center">
+      <span class="mask"><span class="t-display-l" id="a1">IT RUNS BESIDE</span></span>
+      <span class="mask"><span class="t-display-l" id="a2">THE GAME<span class="magenta">.</span></span></span>
+      <i id="openrule"></i>
+      <span class="mask"><span class="t-head" id="a3">NOT INSIDE IT<span class="magenta">.</span></span></span>
+    </div>
+
+    <div id="stack"></div>
+
+    <div id="claim" class="center">
+      <span class="mask"><span class="t-display-l" id="c1">NO MODS<span class="magenta">.</span></span></span>
+      <span class="mask"><span class="t-display-l" id="c2">NO INJECTION<span class="magenta">.</span></span></span>
+    </div>
+
+    <div id="end" class="center">
+      <span class="mask"><span class="wordmark" id="e1">AEGIS AI</span></span>
+      <hr class="rule" id="endrule">
+      <div class="row2">
+        <span class="t-mono dim" id="endtag">Your World. Your AI. Your Story.</span>
+        <span class="spacer"></span>
+        <span class="t-label mute" id="endstamp">PRE-ALPHA · BUILD 0.1.0 · NOT SHIPPED</span>
+      </div>
+    </div>
+  </div>
+  <div class="tex-vignette"></div>
+  <div class="tex-grain" id="grain"></div>
+  <div class="sweep" id="sweep"></div>
+</div>
+
+<script type="module">
+import { EASE, seg, lerp, grain } from "../lib/timeline.js";
+import { STACK } from "../lib/content.js";
+
+const $ = (id) => document.getElementById(id);
+
+/* ── Timing ────────────────────────────────────────────────── */
+const P = {
+  open:   [0.00,  3.80],
+  stack:  [3.80, 11.80],   // four parts, 2s each
+  result: [11.80, 15.20],
+  claim:  [15.20, 19.20],
+  end:    [19.20, 24.00],
+};
+const DURATION = P.end[1];
+const ROW = 2.0;
+const CUTS = [P.stack[0], P.claim[0], P.end[0]];
+
+/* Build the assembly once. */
+const rows = [];
+for (let i = 0; i < STACK.length; i++) {
+  const [name, desc] = STACK[i];
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML =
+    `<hr class="rule">
+     <div class="rowbody">
+       <span class="t-label mute idx">${String(i + 1).padStart(2, "0")}</span>
+       <span class="mask nm"><span class="t-display-s">${name}</span></span>
+       <span class="leader-dots"></span>
+       <span class="t-mono dim desc">${desc}</span>
+     </div>`;
+  $("stack").appendChild(row);
+  rows.push({
+    el: row,
+    rule: row.querySelector(".rule"),
+    name: row.querySelector(".t-display-s"),
+    desc: row.querySelector(".desc"),
+    idx: row.querySelector(".idx"),
+    dots: row.querySelector(".leader-dots"),
+  });
+}
+
+/* The closing row is the point of the diagram: four inputs, one voice, and
+   no key, provider or model name anywhere in the player's path. */
+const result = document.createElement("div");
+result.className = "row";
+result.id = "result";
+result.innerHTML =
+  `<hr class="rule">
+   <div class="rowbody">
+     <span class="t-label magenta idx">↓</span>
+     <span class="mask nm"><span class="t-display-m">ONE VOICE</span></span>
+     <span class="leader-dots"></span>
+     <span class="t-mono dim desc">assembled every turn. you never see a key.</span>
+   </div>`;
+$("stack").appendChild(result);
+const res = {
+  el: result,
+  rule: result.querySelector(".rule"),
+  name: result.querySelector(".t-display-m"),
+  desc: result.querySelector(".desc"),
+  idx: result.querySelector(".idx"),
+  dots: result.querySelector(".leader-dots"),
+};
+
+/* Fill every leader to its own measured width, so the pitch is identical
+   across rows and the dots stop exactly at the clip. */
+function fillLeaders() {
+  for (const r of [...rows, res]) {
+    r.dots.textContent = "·".repeat(Math.ceil(r.dots.clientWidth / 6) + 40);
+  }
+}
+
+const show = (el, on) => { el.style.display = on ? "" : "none"; };
+const within = (t, k) => t >= P[k][0] && t < P[k][1];
+
+function draw(t, frame) {
+  grain($("grain"), frame);
+  $("toprule").style.transform = `scaleX(${seg(t, 0.06, 1.2, EASE.outExpo)})`;
+
+  const showStack = t >= P.stack[0] && t < P.claim[0];
+  show($("open"), within(t, "open"));
+  show($("stack"), showStack);
+  show($("claim"), within(t, "claim"));
+  show($("end"), t >= P.end[0]);
+
+  $("phase").textContent =
+    t < P.stack[0] ? "THE CATEGORY"
+    : showStack ? "HOW IT IS ASSEMBLED"
+    : t < P.end[0] ? "THE POSITION"
+    : "PRE-ALPHA";
+
+  if (within(t, "open")) {
+    const out = seg(t, P.open[1] - 0.48, 0.40, EASE.inExpo);
+    [$("a1"), $("a2")].forEach((el, k) => {
+      const p = seg(t, 0.10 + k * 0.14, 0.90, EASE.outExpo);
+      el.style.translate = `0 ${(1 - p) * 132 - out * 132}%`;
+    });
+    $("openrule").style.transform =
+      `scaleX(${seg(t, 1.15, 0.80, EASE.outExpo) * (1 - out)})`;
+    const p3 = seg(t, 1.45, 0.80, EASE.outExpo);
+    $("a3").style.translate = `0 ${(1 - p3) * 132 - out * 132}%`;
+  }
+
+  if (showStack) {
+    rows.forEach((r, i) => {
+      const at = P.stack[0] + i * ROW;
+      r.rule.style.transform = `scaleX(${seg(t, at, 0.80, EASE.outExpo)})`;
+      const p = seg(t, at + 0.14, 0.82, EASE.outExpo);
+      r.name.style.translate = `0 ${(1 - p) * 132}%`;
+      r.idx.style.opacity = String(seg(t, at + 0.06, 0.34, EASE.linear));
+      r.desc.style.opacity = String(seg(t, at + 0.46, 0.46, EASE.linear));
+      r.dots.style.opacity = String(seg(t, at + 0.40, 0.60, EASE.linear) * 0.8);
+      /* Once the voice resolves, the parts step back — they are inputs, and
+         the output is what the viewer should be left looking at. */
+      r.el.style.opacity = String(1 - 0.62 * seg(t, P.result[0] + 0.25, 0.70, EASE.outExpo));
+    });
+
+    const at = P.result[0];
+    res.el.style.visibility = t >= at ? "visible" : "hidden";
+    res.rule.style.transform = `scaleX(${seg(t, at, 0.85, EASE.outExpo)})`;
+    const p = seg(t, at + 0.20, 0.88, EASE.outExpo);
+    res.name.style.translate = `0 ${(1 - p) * 132}%`;
+    res.idx.style.opacity = String(seg(t, at + 0.10, 0.36, EASE.linear));
+    res.desc.style.opacity = String(seg(t, at + 0.60, 0.50, EASE.linear));
+    res.dots.style.opacity = String(seg(t, at + 0.52, 0.60, EASE.linear) * 0.8);
+  }
+
+  if (within(t, "claim")) {
+    const lt = t - P.claim[0];
+    const out = seg(lt, P.claim[1] - P.claim[0] - 0.46, 0.38, EASE.inExpo);
+    [$("c1"), $("c2")].forEach((el, k) => {
+      const p = seg(lt, 0.14 + k * 0.18, 0.92, EASE.outExpo);
+      el.style.translate = `0 ${(1 - p) * 132 - out * 132}%`;
+    });
+  }
+
+  if (t >= P.end[0]) {
+    const lt = t - P.end[0];
+    const p = seg(lt, 0.30, 0.90, EASE.outExpo);
+    $("e1").style.translate = `0 ${(1 - p) * 132}%`;
+    $("endrule").style.transform = `scaleX(${seg(lt, 0.80, 1.0, EASE.outExpo)})`;
+    $("endtag").style.opacity = String(seg(lt, 1.10, 0.6, EASE.linear));
+    $("endstamp").style.opacity = String(seg(lt, 1.40, 0.6, EASE.linear));
+  }
+
+  let sweepX = -10;
+  for (const c of CUTS) {
+    if (t > c - 0.24 && t < c + 0.30) {
+      sweepX = lerp(-2, 102, seg(t, c - 0.24, 0.52, EASE.inOutQuint));
+    }
+  }
+  $("sweep").style.left = `${sweepX}%`;
+}
+
+await document.fonts.ready;
+fillLeaders();
+draw(0, 0);
+
+window.SCENE = { fps: 30, duration: DURATION, draw, ready: true };
+</script>
+</body>
+</html>
