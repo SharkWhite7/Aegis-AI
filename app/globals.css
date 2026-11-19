@@ -562,3 +562,31 @@ body {
 .field-line:focus {
   border-bottom-color: var(--color-magenta);
 }
+
+/* Build bar. Segmented, not smooth: the segments are the denominator and
+   you can count them, so the bar never implies a precision we do not
+   have. Hard edges, like everything else here. */
+.seg {
+  height: 3px;
+  flex: 1 1 0;
+  background-color: var(--color-line-soft);
+}
+
+.seg[data-state="done"] {
+  background-color: var(--color-bone);
+}
+
+.seg[data-state="building"] {
+  background-color: var(--color-magenta);
+  animation: seg-work 2.4s var(--ease-in-out-quint) infinite;
+}
+
+@keyframes seg-work {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}

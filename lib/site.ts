@@ -17,4 +17,5 @@ export const NAV = [
   { n: "06", label: "Audio", href: "#audio" },
   { n: "07", label: "Memory", href: "#memory" },
   { n: "08", label: "Market", href: "#market" },
+  { n: "09", label: "Access", href: "#access" },
 ] as const;

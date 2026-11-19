@@ -7,6 +7,7 @@ import Missions from "@/components/sections/Missions";
 import Audio from "@/components/sections/Audio";
 import Memory from "@/components/sections/Memory";
 import Market from "@/components/sections/Market";
+import Access from "@/components/sections/Access";
 
 export default function Page() {
   return (
@@ -21,6 +22,7 @@ export default function Page() {
       <Audio />
       <Memory />
       <Market />
+      <Access />
     </>
   );
 }
