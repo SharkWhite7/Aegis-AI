@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Aegis-AI</title>
+<meta name="description" content="Aegis-AI é o copiloto de IA que joga ao seu lado: voz em tempo real, missões geradas, DJ inteligente e memória que atravessa sessões. Comece pelo GTA VI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/css/aegis.css">
+</head>
+<body>
+
+<!-- ======================= NAV ======================= -->
+<header class="nav" id="nav">
+  <div class="wrap nav__in">
+    <a class="logo" href="#top" aria-label="Aegis-AI, início">
+      <svg class="logo__mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="lg" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#ff2d7e"/><stop offset=".55" stop-color="#ff6a3c"/><stop offset="1" stop-color="#19e3d4"/>
+          </linearGradient>
+        </defs>
+        <path d="M16 1.8 29 6.4v10.2c0 7.1-5.2 11.8-13 13.6C8.2 28.4 3 23.7 3 16.6V6.4L16 1.8Z" stroke="url(#lg)" stroke-width="2.1"/>
+        <path d="M16 9.4 21.8 22h-3.5l-.9-2.3h-3l-.9 2.3h-3.4L16 9.4Zm0 5.6-.9 2.4h1.8L16 15Z" fill="url(#lg)"/>
+      </svg>
+      <span class="logo__txt">Aegis<span>·</span>AI</span>
+    </a>
+
+    <nav class="nav__links" aria-label="Navegação principal">
+      <a href="#agentes">Agentes</a>
+      <a href="#jogos">Jogos</a>
+      <a href="#recursos">Recursos</a>
+      <a href="#marketplace">Marketplace</a>
+      <a href="#planos">Planos</a>
+      <a href="#criadores">Criadores</a>
+    </nav>
+
+    <div class="nav__right">
+      <button class="icon-btn" id="searchOpen" aria-label="Buscar agentes e jogos">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </button>
+      <a class="nav__signin" href="#entrar">Entrar</a>
+      <a class="btn btn--primary btn--sm nav__cta" href="#lista"><span class="t-long">Começar&nbsp;</span>grátis</a>
+      <button class="icon-btn nav__burger" id="burger" aria-expanded="false" aria-controls="drawer" aria-label="Abrir menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="nav__drawer" id="drawer" data-open="false">
+    <div class="wrap">
+      <nav aria-label="Navegação móvel">
+        <a href="#agentes">Agentes</a>
+        <a href="#jogos">Jogos</a>
+        <a href="#recursos">Recursos</a>
+        <a href="#marketplace">Marketplace</a>
+        <a href="#planos">Planos</a>
+        <a href="#criadores">Criadores</a>
+        <a href="#faq">Dúvidas</a>
+      </nav>
+      <a class="btn btn--primary btn--block" href="#lista">Entrar na lista de espera</a>
+    </div>
+  </div>
+</header>
+
+<!-- ======================= HERO ======================= -->
+<section class="hero" id="top">
+  <div class="hero__sky" aria-hidden="true"></div>
+  <div class="hero__city" aria-hidden="true">
+    <svg viewBox="0 0 1440 260" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#241440"/><stop offset="1" stop-color="#07050d"/>
+        </linearGradient>
+      </defs>
+      <path d="M0,260 0,153 74,153 74,159 148,159 148,114 222,114 222,135 272,135 272,83 314,83 314,98 346,98 346,97 380,97 380,70 406,70 406,74 439,74 439,101 464,101 464,112 498,112 498,89 531,89 531,110 556,110 556,105 587,105 587,129 622,129 622,120 648,120 648,121 698,121 698,41 725,41 725,68 748,68 748,130 774,130 774,130 816,130 816,107 882,107 882,144 940,144 940,80 967,80 967,101 1006,101 1006,94 1040,94 1040,126 1090,126 1090,140 1124,140 1124,117 1174,117 1174,114 1200,114 1200,153 1242,153 1242,139 1276,139 1276,128 1326,128 1326,160 1352,160 1352,197 1394,197 1394,202 1440,202 1440,260Z" fill="url(#sky)"/>
+    </svg>
+  </div>
+  <i class="mast mast--a" aria-hidden="true"></i>
+  <i class="mast mast--b" aria-hidden="true"></i>
+  <div class="grain" aria-hidden="true"></div>
+
+  <div class="wrap hero__in">
+    <div class="hero__copy">
+      <p class="eyebrow">Companheiro de IA para jogos · Beta privado</p>
+      <h1>Seu mundo.<br>Sua IA.<br><em>Sua história.</em></h1>
+      <p class="lede">
+        O Aegis-AI roda ao lado do jogo e conversa com você por voz enquanto você joga.
+        Ele entende o que está acontecendo, lembra das suas sessões anteriores, gera missões
+        no seu estilo e controla a trilha sonora. Começamos pelo GTA VI — e seguimos para o resto da sua biblioteca.
+      </p>
+      <div class="hero__cta">
+        <a class="btn btn--primary" href="#lista">
+          Entrar na lista de espera
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn--ghost" href="#agentes">Conhecer os agentes</a>
+      </div>
+      <div class="hero__note">
+        <span><b>Aplicativo externo.</b> Nada é instalado dentro do jogo.</span>
+        <span><b>Sem mods.</b> Sem arquivos alterados, sem risco de ban.</span>
+      </div>
+      <div class="hero__plats">
+        <span>Roda em</span>
+        <span class="pill">PC · Windows</span>
+        <span class="pill">macOS</span>
+        <span class="pill">iOS &amp; Android</span>
+        <span class="pill">Overlay ou 2ª tela</span>
+      </div>
+    </div>
+
+    <!-- HUD do copiloto -->
+    <aside class="hud" aria-label="Demonstração do copiloto em sessão">
+      <div class="hud__bar">
+        <span class="pill pill--live"><i class="dot"></i>Em sessão</span>
+        <span class="hud__ttl">Sessão 27 · Vice Beach · 02:14</span>
+      </div>
+      <div class="hud__body">
+        <div class="agentline">
+          <div class="orb" aria-hidden="true"></div>
+          <div class="agentline__meta">
+            <span class="agentline__name">Viper</span>
+            <span class="agentline__role">Street Hustler · voz pt-BR</span>
+          </div>
+          <span class="pill pill--on" style="margin-left:auto"><i class="dot"></i>340 ms</span>
+        </div>
+
+        <p class="say" id="say">Você passou três noites atrás do mesmo contrato. <i>Hoje a gente faz diferente:</i> sem tiro, só negócio.</p>
+
+        <div class="wave" id="wave" aria-hidden="true"></div>
+
+        <div class="hud__rows">
+          <div class="hrow">
+            <span class="hrow__ic" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#19e3d4" stroke-width="2" stroke-linecap="round"><path d="M12 3v10m0 0a3 3 0 1 0 3 3V5l5 1"/></svg>
+            </span>
+            <span class="hrow__tx">
+              <span class="hrow__k">AI DJ · tocando agora</span>
+              <span class="hrow__v">Sirens &amp; Synths — fuga policial</span>
+            </span>
+            <span class="eqmini" aria-hidden="true"><i style="animation-delay:0s"></i><i style="animation-delay:.18s"></i><i style="animation-delay:.36s"></i><i style="animation-delay:.1s"></i></span>
+          </div>
+          <div class="hrow">
+            <span class="hrow__ic" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ff2d7e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V5a1 1 0 0 1 1-1h11l-1.5 3L16 10H5"/><path d="M4 20h7"/></svg>
+            </span>
+            <span class="hrow__tx">
+              <span class="hrow__k">Missão ativa</span>
+              <span class="hrow__v">Capital Sem Pólvora · 2 de 4 objetivos</span>
+            </span>
+            <span class="hrow__r nums">+850 XP</span>
+          </div>
+          <div class="hrow">
+            <span class="hrow__ic" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffb24a" stroke-width="2" stroke-linecap="round"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="8.5"/></svg>
+            </span>
+            <span class="hrow__tx">
+              <span class="hrow__k">Memória</span>
+              <span class="hrow__v">1.284 fatos · 26 sessões · 3 metas abertas</span>
+            </span>
+            <span class="hrow__r">sync</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ======================= TICKER ======================= -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker__track" id="ticker">
+    <span>Voz em tempo real</span><span>Missões geradas por sessão</span><span>Memória persistente</span>
+    <span>DJ com Spotify</span><span>6 personalidades</span><span>Marketplace de agentes</span>
+    <span>Sem mods, sem ban</span><span>Beta privado · 2026</span>
+  </div>
+</div>
+
+<!-- ======================= JOGOS ======================= -->
+<section class="band band--tight rail" id="jogos">
+  <div class="rail__head rv">
+    <div class="sec-head__txt">
+      <p class="eyebrow">Catálogo</p>
+      <h2>Um copiloto, vários jogos</h2>
+    </div>
+    <div class="rail__nav">
+      <button class="icon-btn" data-rail="railJogos" data-dir="-1" aria-label="Rolar jogos para a esquerda">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>
+      </button>
+      <button class="icon-btn" data-rail="railJogos" data-dir="1" aria-label="Rolar jogos para a direita">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="rail__scroller" id="railJogos" tabindex="0" aria-label="Jogos compatíveis"></div>
+  <div class="wrap">
+    <p class="muted" style="font-size:.82rem;max-width:72ch">
+      O suporte varia por jogo: <b style="color:var(--fg-dim);font-weight:500">contexto profundo</b> usa áudio, entrada do jogador
+      e leitura de tela opcional; <b style="color:var(--fg-dim);font-weight:500">contexto básico</b> usa voz e memória, sem leitura de tela.
+    </p>
+  </div>
+</section>
+
+<!-- ======================= AGENTES ======================= -->
+<section class="band band--tight rail" id="agentes">
+  <div class="rail__head rv">
+    <div class="sec-head__txt">
+      <p class="eyebrow">Elenco</p>
+      <h2>Escolha quem joga com você</h2>
+    </div>
+    <div class="rail__nav">
+      <button class="icon-btn" data-rail="railAgentes" data-dir="-1" aria-label="Rolar agentes para a esquerda">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>
+      </button>
+      <button class="icon-btn" data-rail="railAgentes" data-dir="1" aria-label="Rolar agentes para a direita">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="rail__scroller" id="railAgentes" tabindex="0" aria-label="Agentes disponíveis"></div>
+</section>
+
+<!-- ======================= RECURSOS ======================= -->
+<section class="band" id="recursos">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-head__txt">
+        <p class="eyebrow">O que ele faz enquanto você joga</p>
+        <h2>Quatro sistemas, uma companhia</h2>
+      </div>
+      <p class="lede" style="max-width:40ch;font-size:.95rem">
+        Cada sistema funciona sozinho. Juntos, eles fazem a sessão de hoje não parecer a de ontem.
+      </p>
+    </div>
+
+    <div class="feat">
+      <div class="feat__row">
+        <!-- Co-piloto -->
+        <article class="card card--7 rv">
+          <span class="glow glow--pink" aria-hidden="true"></span>
+          <div class="card__head">
+            <p class="eyebrow">01 · Co-piloto de voz</p>
+            <h3>Conversa, não comando</h3>
+          </div>
+          <p>
+            Você fala normalmente e ele responde por voz, em português, sem menu e sem atalho.
+            O reconhecimento roda local no seu aparelho; só a intenção sobe para a nuvem — por isso
+            a resposta chega antes de a perseguição acabar.
+          </p>
+          <div class="kpi">
+            <div class="kpi__i"><div class="kpi__v nums">340<span>ms</span></div><div class="kpi__k">Latência alvo</div></div>
+            <div class="kpi__i"><div class="kpi__v nums">6</div><div class="kpi__k">Personalidades</div></div>
+            <div class="kpi__i"><div class="kpi__v nums">3</div><div class="kpi__k">Idiomas no beta</div></div>
+          </div>
+        </article>
+
+        <!-- Missões -->
+        <article class="card card--5 rv">
+          <div class="card__head">
+            <p class="eyebrow">02 · Missões dinâmicas</p>
+            <h3>Objetivos escritos para você</h3>
+          </div>
+          <p>Ele lê seu histórico e propõe o desafio do dia. Você aceita, nega ou pede mais difícil.</p>
+          <div class="mission">
+            <div class="mission__top">
+              <span class="pill pill--soon">Gerada hoje</span>
+              <span class="mission__name">Capital Sem Pólvora</span>
+            </div>
+            <div class="mission__body">
+              <ul class="obj">
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>Faturar $250.000 em 3 horas de sessão</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>Zero armas disparadas</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c7293" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg>Duas entregas acima de 140 km/h</li>
+                <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c7293" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/></svg>Terminar com a lataria intacta</li>
+              </ul>
+            </div>
+            <div class="mission__foot">
+              <span>Dificuldade <span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></span>
+              <span>Recompensa <b>+850 XP</b></span>
+              <span>Desbloqueia <b>O Importador</b></span>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="feat__row">
+        <!-- DJ -->
+        <article class="card card--5 rv">
+          <div class="card__head">
+            <p class="eyebrow">03 · AI DJ + Spotify</p>
+            <h3>A trilha segue a cena</h3>
+          </div>
+          <p>Conecte sua conta e ele assume a fila: troca de playlist quando a cena muda e devolve o controle quando você pede.</p>
+          <div class="maplist">
+            <div class="maprow"><span class="maprow__l"><span class="maprow__ctx">Fuga policial</span><span class="maprow__pl">Sirens &amp; Synths</span></span><span class="maprow__bpm nums">148 BPM</span></div>
+            <div class="maprow"><span class="maprow__l"><span class="maprow__ctx">Noite na orla</span><span class="maprow__pl">Neon Cruise</span></span><span class="maprow__bpm nums">96 BPM</span></div>
+            <div class="maprow"><span class="maprow__l"><span class="maprow__ctx">Corrida de rua</span><span class="maprow__pl">Redline Baile</span></span><span class="maprow__bpm nums">132 BPM</span></div>
+            <div class="maprow"><span class="maprow__l"><span class="maprow__ctx">Depois do assalto</span><span class="maprow__pl">Cash Cooldown</span></span><span class="maprow__bpm nums">74 BPM</span></div>
+          </div>
+          <p class="muted" style="font-size:.78rem;margin-top:13px">
+            Requer Spotify Premium para controle de playback. Você autoriza na sua conta e revoga quando quiser.
+          </p>
+        </article>
+
+        <!-- Memória -->
+        <article class="card card--7 rv">
+          <span class="glow glow--cyan" aria-hidden="true"></span>
+          <div class="card__head">
+            <p class="eyebrow">04 · Memória persistente</p>
+            <h3>Ele volta sabendo quem você é</h3>
+          </div>
+          <p>
+            Preferências, metas, apelidos, aquele prejuízo no cassino. Cada sessão alimenta um perfil que é só seu —
+            visível, editável e apagável a qualquer momento.
+          </p>
+          <div class="mem">
+            <div class="mem__i"><span class="mem__dot" aria-hidden="true"></span><span class="mem__tx"><span class="mem__k">Preferência · sessão 06</span><span class="mem__v">Só dirige tração traseira. Recusou três carros de rali seguidos.</span></span></div>
+            <div class="mem__i"><span class="mem__dot" aria-hidden="true"></span><span class="mem__tx"><span class="mem__k">Meta aberta · sessão 14</span><span class="mem__v">Comprar a casa de praia de Vice Beach. Faltam $1.2M.</span></span></div>
+            <div class="mem__i"><span class="mem__dot" aria-hidden="true"></span><span class="mem__tx"><span class="mem__k">Combinado · sessão 19</span><span class="mem__v">Nunca mais entrar no cassino depois de perder $42.000. Você pediu para eu lembrar.</span></span></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= COMO FUNCIONA ======================= -->
+<section class="band band--tight" id="como">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-head__txt">
+        <p class="eyebrow">Instalação</p>
+        <h2>Três passos, dois minutos</h2>
+      </div>
+    </div>
+    <div class="steps">
+      <article class="step rv">
+        <p class="step__n">Passo 01</p>
+        <h3>Instale o companheiro</h3>
+        <p>Baixe o app para PC ou celular. Ele roda por fora do jogo, como um Discord: nenhum arquivo do jogo é tocado.</p>
+      </article>
+      <article class="step rv">
+        <p class="step__n">Passo 02</p>
+        <h3>Escolha seu agente</h3>
+        <p>Pegue uma das personalidades do elenco, ajuste voz e tom, e diga como você gosta de jogar. Leva um minuto.</p>
+      </article>
+      <article class="step rv">
+        <p class="step__n">Passo 03</p>
+        <h3>Abra o jogo e fale</h3>
+        <p>O agente entra em sessão, acompanha o que você faz e começa a conversar. A memória liga a partir da primeira noite.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= MARKETPLACE / CRIADORES ======================= -->
+<section class="band" id="marketplace">
+  <div class="wrap split">
+    <div class="rv" style="display:grid;gap:18px;min-width:0" id="criadores">
+      <p class="eyebrow">Marketplace de agentes</p>
+      <h2>Qualquer um pode criar um parceiro</h2>
+      <p class="lede">
+        Um agente do Aegis-AI é um arquivo de personalidade: voz, jeito de falar, o que ele observa,
+        o que ele lembra e quando ele abre a boca. Publique no marketplace, defina o preço e receba por assinatura ou venda única.
+      </p>
+      <div class="kpi" style="margin-top:4px">
+        <div class="kpi__i"><div class="kpi__v nums">70<span>%</span></div><div class="kpi__k">Fica com o criador</div></div>
+        <div class="kpi__i"><div class="kpi__v nums">0<span>R$</span></div><div class="kpi__k">Custo para publicar</div></div>
+        <div class="kpi__i"><div class="kpi__v nums">24<span>h</span></div><div class="kpi__k">Revisão de envio</div></div>
+      </div>
+      <div style="display:flex;gap:11px;flex-wrap:wrap;margin-top:6px">
+        <a class="btn btn--primary" href="#lista">Virar criador</a>
+        <a class="btn btn--ghost" href="#faq">Ver documentação</a>
+      </div>
+    </div>
+
+    <div class="code rv">
+      <div class="code__bar"><i></i><i></i><i></i>&nbsp;&nbsp;agent.manifest.json</div>
+<pre><code><span class="c">// personalidade publicada no marketplace</span>
+{
+  <span class="k">"id"</span>: <span class="s">"the-mechanic"</span>,
+  <span class="k">"nome"</span>: <span class="s">"Rafa, o Mecânico"</span>,
+  <span class="k">"voz"</span>: { <span class="k">"id"</span>: <span class="s">"pt-br-rafa"</span>, <span class="k">"latencia_ms"</span>: <span class="n">320</span> },
+  <span class="k">"tom"</span>: [<span class="s">"direto"</span>, <span class="s">"zoeiro"</span>, <span class="s">"técnico"</span>],
+  <span class="k">"observa"</span>: [<span class="s">"dano_motor"</span>, <span class="s">"largada"</span>, <span class="s">"concessionária"</span>],
+  <span class="k">"lembra"</span>: [<span class="s">"garagem"</span>, <span class="s">"setups"</span>, <span class="s">"melhores_voltas"</span>],
+  <span class="k">"fala_quando"</span>: <span class="s">"evento || pergunta || silencio &gt; 90s"</span>,
+  <span class="k">"preco"</span>: { <span class="k">"modelo"</span>: <span class="s">"assinatura"</span>, <span class="k">"brl"</span>: <span class="n">14.90</span> }
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= PLANOS ======================= -->
+<section class="band" id="planos">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-head__txt">
+        <p class="eyebrow">Planos</p>
+        <h2>Comece grátis. Suba quando fizer sentido.</h2>
+      </div>
+      <div class="toggle" role="group" aria-label="Período de cobrança">
+        <button type="button" id="billMonth" aria-pressed="true">Mensal</button>
+        <button type="button" id="billYear" aria-pressed="false">Anual <em>−20%</em></button>
+      </div>
+    </div>
+
+    <div class="plans">
+      <article class="plan rv">
+        <p class="plan__name">Grátis</p>
+        <div class="plan__price"><span class="plan__num nums">R$&nbsp;0</span><span class="plan__per">para sempre</span></div>
+        <p class="plan__desc">O suficiente para descobrir se jogar acompanhado é melhor.</p>
+        <ul>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>1 agente do elenco base</li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>60 min de voz por mês</li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>3 missões por semana</li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>Memória de 7 dias</li>
+          <li class="off"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7c7293" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>Sem leitura de tela</li>
+        </ul>
+        <a class="btn btn--ghost btn--block" href="#lista">Começar grátis</a>
+        <p class="plan__foot">Sem cartão</p>
+      </article>
+
+      <article class="plan plan--hot rv">
+        <span class="plan__tag">Mais escolhido</span>
+        <p class="plan__name">Pro</p>
+        <div class="plan__price"><span class="plan__num nums" data-m="R$&nbsp;29" data-y="R$&nbsp;23">R$&nbsp;29</span><span class="plan__per" data-m="/mês" data-y="/mês, no anual">/mês</span></div>
+        <p class="plan__desc">Para quem joga toda semana e quer o agente junto o tempo todo.</p>
+        <ul>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>Os 6 agentes do elenco</li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>20 h de voz por mês</li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>Missões ilimitadas e memória sem prazo</li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>AI DJ completo com Spotify</li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>Leitura de tela opcional</li>
+        </ul>
+        <a class="btn btn--primary btn--block" href="#lista">Garantir o preço de beta</a>
+        <p class="plan__foot">Cancela quando quiser</p>
+      </article>
+
+      <article class="plan rv">
+        <p class="plan__name">Elite</p>
+        <div class="plan__price"><span class="plan__num nums" data-m="R$&nbsp;59" data-y="R$&nbsp;47">R$&nbsp;59</span><span class="plan__per" data-m="/mês" data-y="/mês, no anual">/mês</span></div>
+        <p class="plan__desc">Para quem transmite, cria conteúdo ou quer o ecossistema inteiro.</p>
+        <ul>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>Tudo do Pro, com voz ilimitada</li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>3 agentes na mesma sessão</li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>Vozes premium e clonagem da sua</li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>2 agentes do marketplace inclusos</li>
+          <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>SDK, overlay para live e acesso antecipado</li>
+        </ul>
+        <a class="btn btn--ghost btn--block" href="#lista">Falar com a gente</a>
+        <p class="plan__foot">Inclui suporte direto</p>
+      </article>
+    </div>
+
+    <p class="muted rv" style="font-size:.82rem;margin-top:18px;max-width:72ch">
+      Agentes do marketplace são cobrados à parte, do criador para você. Preços de beta travados por 12 meses para quem entrar na lista agora.
+    </p>
+  </div>
+</section>
+
+<!-- ======================= FAQ ======================= -->
+<section class="band band--tight" id="faq">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-head__txt">
+        <p class="eyebrow">Dúvidas</p>
+        <h2>O que todo mundo pergunta</h2>
+      </div>
+    </div>
+    <div class="faq">
+      <details class="q" open>
+        <summary>Isso é um mod? Posso tomar ban?</summary>
+        <p class="q__a">Não é mod. O Aegis-AI é um programa separado, como um Discord ou um OBS aberto na mesma máquina. Ele não injeta código, não altera arquivo do jogo e não lê memória do processo. Nada do que ele faz viola os termos de uso das publicadoras.</p>
+      </details>
+      <details class="q">
+        <summary>Preciso ter GTA VI para usar?</summary>
+        <p class="q__a">Não. O GTA VI é o ponto de partida do contexto profundo, mas o agente funciona com qualquer jogo da lista — e também sozinho, como companhia de sessão. A lista de jogos cresce a cada atualização.</p>
+      </details>
+      <details class="q">
+        <summary>Como ele entende o que está acontecendo na tela?</summary>
+        <p class="q__a">Por três caminhos, todos opcionais: o que você fala, o áudio do jogo e a leitura de tela. A leitura de tela analisa quadros em intervalos, extrai sinais (perseguição, corrida, dinheiro, local) e descarta a imagem em seguida. Você liga e desliga quando quiser, e a lista de sinais fica visível no app.</p>
+      </details>
+      <details class="q">
+        <summary>Funciona em console?</summary>
+        <p class="q__a">Sim, com o app de celular ao lado do console: voz, missões e memória funcionam normalmente. A leitura de tela em PS5 e Xbox depende de captura externa, então no beta ela fica restrita ao PC.</p>
+      </details>
+      <details class="q">
+        <summary>O Spotify é obrigatório?</summary>
+        <p class="q__a">Não. Sem conta conectada, o AI DJ sugere faixas e você toca onde quiser. Com conta Premium conectada, ele controla a reprodução direto — e você revoga o acesso a qualquer momento pelo painel do Spotify ou pelo app.</p>
+      </details>
+      <details class="q">
+        <summary>Quem é dono da minha memória?</summary>
+        <p class="q__a">Você. O perfil é individual, exportável em JSON e apagável com um clique — incluindo fato por fato. Suas conversas não treinam modelos nossos nem de terceiros, e nada do seu perfil vai para criadores do marketplace.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= CTA FINAL ======================= -->
+<section class="final band" id="lista">
+  <div class="wrap final__in">
+    <p class="eyebrow rv">Beta privado · primeiras vagas</p>
+    <h2 class="rv">Entre antes de todo mundo</h2>
+    <p class="lede rv" style="text-align:center">
+      Avisamos você assim que a sua plataforma abrir. Quem entra agora mantém o preço de beta por 12 meses.
+    </p>
+
+    <form class="form rv" id="waitlist" novalidate>
+      <input id="wl-email" type="email" name="email" placeholder="seu@email.com" autocomplete="email" required aria-label="Seu e-mail">
+      <select id="wl-plat" name="plataforma" aria-label="Onde você joga">
+        <option value="pc">PC</option>
+        <option value="ps5">PlayStation 5</option>
+        <option value="xbox">Xbox Series</option>
+        <option value="outro">Outro</option>
+      </select>
+      <button class="btn btn--primary" type="submit">Quero entrar</button>
+    </form>
+    <p class="form__ok" id="wlOk">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#36d98b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5.5 5.5L20 6.5"/></svg>
+      <span id="wlMsg">Pronto. Você está na lista.</span>
+    </p>
+    <p class="final__fine rv">Um e-mail quando abrir, outro quando a sua plataforma entrar. Nada além disso.</p>
+  </div>
+</section>
+
+<!-- ======================= FOOTER ======================= -->
+<footer class="foot">
+  <div class="wrap foot__grid">
+    <div class="foot__col">
+      <a class="logo" href="#top" aria-label="Aegis-AI, início">
+        <svg class="logo__mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M16 1.8 29 6.4v10.2c0 7.1-5.2 11.8-13 13.6C8.2 28.4 3 23.7 3 16.6V6.4L16 1.8Z" stroke="url(#lg)" stroke-width="2.1"/>
+          <path d="M16 9.4 21.8 22h-3.5l-.9-2.3h-3l-.9 2.3h-3.4L16 9.4Zm0 5.6-.9 2.4h1.8L16 15Z" fill="url(#lg)"/>
+        </svg>
+        <span class="logo__txt">Aegis<span>·</span>AI</span>
+      </a>
+      <p class="muted" style="font-size:.85rem;max-width:34ch">
+        Companheiros de IA para jogos. Seu mundo, sua IA, sua história.
+      </p>
+      <div class="soc" style="margin-top:4px">
+        <a class="icon-btn" href="#x" aria-label="Aegis-AI no X">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.6 3h3.3l-7.2 8.2L22 21h-6.6l-5.2-6.6L4.3 21H1l7.7-8.8L1.7 3h6.8l4.7 6.1L17.6 3Zm-1.2 16h1.8L7.7 4.9H5.8L16.4 19Z"/></svg>
+        </a>
+        <a class="icon-btn" href="#discord" aria-label="Aegis-AI no Discord">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.3 5.3A16 16 0 0 0 15.4 4l-.3.5a12 12 0 0 1 3.4 1.7 14 14 0 0 0-12-.1A12 12 0 0 1 9.9 4.5L9.5 4a16 16 0 0 0-3.9 1.3C3.1 9 2.4 12.6 2.8 16.1a16 16 0 0 0 4.8 2.4l1-1.6a10 10 0 0 1-1.6-.8l.4-.3a11 11 0 0 0 9.3 0l.4.3a10 10 0 0 1-1.6.8l1 1.6a16 16 0 0 0 4.8-2.4c.4-4-.7-7.6-2-10.8ZM9 14c-.8 0-1.5-.8-1.5-1.8S8.2 10.4 9 10.4s1.5.8 1.5 1.8S9.8 14 9 14Zm6 0c-.8 0-1.5-.8-1.5-1.8s.7-1.8 1.5-1.8 1.5.8 1.5 1.8S15.8 14 15 14Z"/></svg>
+        </a>
+        <a class="icon-btn" href="#youtube" aria-label="Aegis-AI no YouTube">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12s0-3.3-.4-4.9a2.6 2.6 0 0 0-1.8-1.8C18.2 4.9 12 4.9 12 4.9s-6.2 0-7.8.4a2.6 2.6 0 0 0-1.8 1.8C2 8.7 2 12 2 12s0 3.3.4 4.9c.2.9.9 1.6 1.8 1.8 1.6.4 7.8.4 7.8.4s6.2 0 7.8-.4a2.6 2.6 0 0 0 1.8-1.8c.4-1.6.4-4.9.4-4.9ZM10 15.2V8.8l5.2 3.2L10 15.2Z"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="foot__col">
+      <h4>Produto</h4>
+      <a href="#agentes">Agentes</a>
+      <a href="#jogos">Jogos compatíveis</a>
+      <a href="#recursos">Recursos</a>
+      <a href="#planos">Planos</a>
+      <a href="#lista">Baixar o app</a>
+    </div>
+    <div class="foot__col">
+      <h4>Criadores</h4>
+      <a href="#marketplace">Marketplace</a>
+      <a href="#criadores">Publicar um agente</a>
+      <a href="#criadores">Repasse e pagamentos</a>
+      <a href="#faq">Documentação</a>
+    </div>
+    <div class="foot__col">
+      <h4>Empresa</h4>
+      <a href="#faq">Dúvidas</a>
+      <a href="#privacidade">Privacidade</a>
+      <a href="#termos">Termos</a>
+      <a href="#contato">Contato</a>
+      <a href="#imprensa">Imprensa</a>
+    </div>
+  </div>
+
+  <div class="wrap foot__bot">
+    <div class="foot__row">
+      <span>© 2026 Aegis-AI</span>
+      <span>Feito para quem joga até tarde</span>
+      <span class="pill">pt-BR</span>
+    </div>
+    <p class="foot__legal">
+      O Aegis-AI é um aplicativo companheiro independente. Não é afiliado, patrocinado nem endossado pela Rockstar Games,
+      Take-Two Interactive, Spotify ou qualquer outra empresa citada nesta página. Grand Theft Auto, GTA e demais títulos
+      e marcas pertencem aos seus respectivos proprietários e são citados apenas para indicar compatibilidade.
+      Nenhum arquivo de jogo é modificado, distribuído ou redistribuído.
+    </p>
+  </div>
+</footer>
+
+<!-- ======================= BUSCA ======================= -->
+<div class="search" id="search" role="dialog" aria-modal="true" aria-label="Buscar no catálogo">
+  <div class="search__box">
+    <div class="search__in">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c7293" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="searchInput" type="search" placeholder="Buscar agentes, jogos, recursos…" aria-label="Buscar" autocomplete="off">
+      <kbd>ESC</kbd>
+    </div>
+    <div class="search__res" id="searchRes"></div>
+  </div>
+</div>
+
+<script src="assets/js/aegis.js"></script>
+</body>
+</html>
