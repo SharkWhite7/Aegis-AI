@@ -12,4 +12,5 @@ export const SITE = {
 export const NAV = [
   { n: "02", label: "Premise", href: "#premise" },
   { n: "03", label: "Co-Pilot", href: "#co-pilot" },
+  { n: "04", label: "Your Game", href: "#your-game" },
 ] as const;

@@ -531,3 +531,24 @@ body {
 .game-pick:hover {
   color: var(--color-bone);
 }
+
+/* Text field as a ruled line, not a box. A bordered box with a radius is
+   the single most form-shaped object there is; a rule under the text is
+   how a printed form does it. */
+.field-line {
+  width: 100%;
+  background-color: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--color-line-hard);
+  padding: 0.55em 0;
+  color: var(--color-bone);
+  transition: border-color 0.3s var(--ease-out-expo);
+}
+
+.field-line::placeholder {
+  color: var(--color-bone-mute);
+}
+
+.field-line:focus {
+  border-bottom-color: var(--color-magenta);
+}

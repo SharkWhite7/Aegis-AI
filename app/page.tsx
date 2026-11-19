@@ -2,6 +2,7 @@ import BootSequence from "@/components/boot/BootSequence";
 import Hero from "@/components/sections/Hero";
 import Premise from "@/components/sections/Premise";
 import CoPilot from "@/components/sections/CoPilot";
+import YourGame from "@/components/sections/YourGame";
 
 export default function Page() {
   return (
@@ -11,6 +12,7 @@ export default function Page() {
       <Hero />
       <Premise />
       <CoPilot />
+      <YourGame />
     </>
   );
 }
