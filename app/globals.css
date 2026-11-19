@@ -1,0 +1,466 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────
+   VICE AI — NEON NOIR EDITORIAL
+   Four colours. One accent, used sparingly. No shadows.
+   No radii above 2px. Texture instead of gloss.
+   ────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* ── Field ─────────────────────────────────────────────── */
+  --color-ink: #0a0c0d;
+  --color-ink-raise: #101314;
+  --color-ink-deep: #06080a;
+
+  /* ── Type ──────────────────────────────────────────────── */
+  --color-bone: #f2efe9;
+  --color-bone-dim: #9b9790;
+  --color-bone-mute: #5c5a56;
+
+  /* ── Accent (target: under 5% of any viewport) ─────────── */
+  --color-magenta: #ff2d6f;
+  --color-magenta-deep: #c01047;
+
+  /* ── Field accent (large dark blocks only) ─────────────── */
+  --color-teal: #0f3b38;
+  --color-teal-lit: #17524d;
+
+  /* ── Hairlines ─────────────────────────────────────────── */
+  --color-line: oklch(93% 0.01 85 / 0.14);
+  --color-line-soft: oklch(93% 0.01 85 / 0.07);
+  --color-line-hard: oklch(93% 0.01 85 / 0.3);
+
+  /* ── Families ──────────────────────────────────────────── */
+  --font-display: var(--font-archivo), "Arial Narrow", sans-serif;
+  --font-sans: var(--font-instrument), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  /* ── Measure ───────────────────────────────────────────── */
+  --spacing-gutter: 1.5rem;
+  --container-shell: 1680px;
+
+  /* ── Motion ────────────────────────────────────────────── */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
+}
+
+:root {
+  /* Editorial type scale — big jumps, no timid middle steps.
+     Sizes are fluid by clamp(), never by breakpoint utilities. */
+  --t-label: 0.6875rem;
+  --t-micro: 0.75rem;
+  --t-small: 0.8125rem;
+  --t-body: 1rem;
+  --t-body-lg: clamp(1.0625rem, 0.3vw + 1rem, 1.1875rem);
+  --t-lede: clamp(1.25rem, 0.9vw + 1rem, 1.75rem);
+  --t-head: clamp(1.75rem, 2.6vw, 2.75rem);
+  --t-display-s: clamp(2.25rem, 4vw, 3.5rem);
+  --t-display-m: clamp(2.75rem, 6.4vw, 5.5rem);
+  --t-display-l: clamp(3.25rem, 9.5vw, 9rem);
+  /* Widest line is 4.771em. Sized to fit 8 cols at every width. */
+  --t-display-xl: clamp(3.5rem, 11.8vw, 12.5rem);
+
+  --shell-pad: clamp(1.25rem, 4vw, 4.5rem);
+  --section-pad: clamp(5rem, 11vw, 11rem);
+  --nav-h: 4.25rem;
+  --bar-h: 2.25rem;
+
+  color-scheme: dark;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Reset — kill the rounded-card defaults that read as template
+   ────────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html {
+  background-color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-ink);
+  color: var(--color-bone);
+  font-family: var(--font-sans);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  letter-spacing: -0.011em;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+::selection {
+  background-color: var(--color-magenta);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 1px solid var(--color-magenta);
+  outline-offset: 3px;
+}
+
+/* Thin, unobtrusive scrollbar — part of the chrome, not a widget */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ink-deep);
+}
+::-webkit-scrollbar-thumb {
+  background: #23282a;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #31373a;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Type classes — family / size / weight / leading / tracking only.
+   Never colour. Colour always comes from a Tailwind utility so it
+   can be overridden per instance.
+   ────────────────────────────────────────────────────────────── */
+
+.t-display-xl,
+.t-display-l,
+.t-display-m,
+.t-display-s {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-stretch: 64%;
+  line-height: 0.82;
+  letter-spacing: -0.028em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.t-display-xl {
+  font-size: var(--t-display-xl);
+}
+.t-display-l {
+  font-size: var(--t-display-l);
+  line-height: 0.84;
+}
+.t-display-m {
+  font-size: var(--t-display-m);
+  line-height: 0.86;
+  letter-spacing: -0.022em;
+}
+.t-display-s {
+  font-size: var(--t-display-s);
+  line-height: 0.9;
+  letter-spacing: -0.018em;
+}
+
+/* A wider cut of the display face, for subheads that need air */
+.t-head {
+  font-family: var(--font-display);
+  font-size: var(--t-head);
+  font-weight: 700;
+  font-stretch: 88%;
+  line-height: 1.02;
+  letter-spacing: -0.017em;
+  text-transform: uppercase;
+}
+
+.t-lede {
+  font-size: var(--t-lede);
+  line-height: 1.34;
+  letter-spacing: -0.019em;
+  text-wrap: pretty;
+}
+
+.t-body-lg {
+  font-size: var(--t-body-lg);
+  line-height: 1.58;
+  text-wrap: pretty;
+}
+
+.t-small {
+  font-size: var(--t-small);
+  line-height: 1.5;
+}
+
+/* Mono label — the connective tissue of the whole site */
+.t-label {
+  font-family: var(--font-mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tabular figures wherever numbers sit in a column */
+.nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Shell & grid
+   ────────────────────────────────────────────────────────────── */
+
+.shell {
+  width: 100%;
+  max-width: var(--container-shell);
+  margin-inline: auto;
+  padding-inline: var(--shell-pad);
+}
+
+.grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--spacing-gutter);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Texture — grain + vignette. Fixed, inert, above everything.
+   ────────────────────────────────────────────────────────────── */
+
+.tex-grain,
+.tex-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+}
+
+.tex-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  opacity: 0.062;
+  mix-blend-mode: overlay;
+}
+
+.tex-vignette {
+  background: radial-gradient(
+    120% 90% at 50% 38%,
+    transparent 38%,
+    rgb(0 0 0 / 0.42) 100%
+  );
+  z-index: 89;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Mask reveal — the only entrance animation the site uses.
+   Each line sits in its own clipped track; GSAP slides the inner
+   span up from below. Pre-animation state is set here so there is
+   no flash before hydration.
+   ────────────────────────────────────────────────────────────── */
+
+.mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.mask > * {
+  display: block;
+  will-change: transform;
+}
+
+/* The standalone `translate` property, deliberately — not `transform`.
+   GSAP parses an existing `transform` as a base offset and composes its
+   own tween on top of it, which strands the line inside the mask. It
+   nulls `translate` instead, so the handover is clean. */
+[data-reveal="mask"] .mask > * {
+  translate: 0 105%;
+}
+
+[data-reveal="fade"] {
+  opacity: 0;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Hairline rule
+   ────────────────────────────────────────────────────────────── */
+
+.rule {
+  display: block;
+  width: 100%;
+  height: 1px;
+  border: 0;
+  background-color: var(--color-line);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Link with a rule that wipes in rather than a hover colour swap
+   ────────────────────────────────────────────────────────────── */
+
+.link-wipe {
+  position: relative;
+  display: inline-block;
+}
+
+.link-wipe::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.22em;
+  height: 1px;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.42s var(--ease-out-expo);
+}
+
+.link-wipe:hover::after,
+.link-wipe:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Respect the system preference. Every reveal resolves instantly.
+   ────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-reveal="mask"] .mask > * {
+    translate: none;
+  }
+
+  [data-reveal="fade"] {
+    opacity: 1;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Components — each owns its own colour, so they are deliberately
+   not overridable by a text-* utility.
+   ────────────────────────────────────────────────────────────── */
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 1.3125rem;
+  font-weight: 800;
+  font-stretch: 66%;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Stamped, hard-edged action. Never a pill. */
+.btn-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75em;
+  padding: 0.78em 1.15em 0.72em;
+  border: 1px solid var(--color-line-hard);
+  background-color: transparent;
+  color: var(--color-bone);
+  font-family: var(--font-mono);
+  font-size: var(--t-label);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color 0.34s var(--ease-out-expo),
+    border-color 0.34s var(--ease-out-expo),
+    color 0.34s var(--ease-out-expo);
+}
+
+.btn-stamp:hover,
+.btn-stamp:focus-visible {
+  background-color: var(--color-magenta);
+  border-color: var(--color-magenta);
+  color: var(--color-ink);
+}
+
+.btn-stamp .arrow {
+  transition: transform 0.34s var(--ease-out-expo);
+}
+
+.btn-stamp:hover .arrow {
+  transform: translateX(3px);
+}
+
+/* Hairline panel. No blur, no radius, no shadow. */
+.panel {
+  border: 1px solid var(--color-line);
+  background-color: var(--color-ink-raise);
+}
+
+.dot-live {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  flex: none;
+  background-color: var(--color-magenta);
+  animation: pulse-live 2.6s var(--ease-in-out-quint) infinite;
+}
+
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.22;
+  }
+}
+
+/* Designer's grid overlay — press G. Off by default. */
+.col-guides {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.22s linear;
+}
+
+.col-guides[data-on="true"] {
+  opacity: 1;
+}
+
+/* Voice activity bars. Scales in place so the baseline stays put. */
+.wave-bar {
+  transform-origin: bottom;
+  animation: wave 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes wave {
+  from {
+    transform: scaleY(0.3);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* Boot overlay. Covers everything, including the fixed chrome. */
+.boot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background-color: var(--color-ink);
+  will-change: transform;
+}
