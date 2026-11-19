@@ -15,8 +15,14 @@ type ConsoleProps = {
   /** Optional track line, set in magenta under the transcript. */
   nowPlaying?: string;
   footerLabel?: string;
-  /** Stagger the turns in once the boot gate opens. Off for swapped content. */
+  /** Stagger the turns in once the boot gate opens. First mount only. */
   animateOnBoot?: boolean;
+  /**
+   * False when this console is stacked behind another. Inactive consoles
+   * stay fully settled so the stack keeps measuring the tallest one, and
+   * re-deal their turns when they come forward.
+   */
+  active?: boolean;
   delay?: number;
   className?: string;
 };
@@ -28,47 +34,72 @@ export default function Console({
   nowPlaying,
   footerLabel = "Listening",
   animateOnBoot = false,
+  active = true,
   delay = 0.9,
   className = "",
 }: ConsoleProps) {
   const root = useRef<HTMLDivElement>(null);
+  const firstRun = useRef(true);
 
   useEffect(() => {
-    if (!animateOnBoot) return;
     const el = root.current;
     if (!el) return;
 
     const rows = el.querySelectorAll<HTMLElement>("[data-turn]");
+    if (rows.length === 0) return;
+
+    const settle = () => gsap.set(rows, { opacity: 1, y: 0 });
+
     if (prefersReducedMotion()) {
-      gsap.set(rows, { opacity: 1 });
+      settle();
+      return;
+    }
+
+    // Behind the stack: stay settled so the container keeps measuring this
+    // transcript's full height, and arm a re-deal for when it comes forward.
+    if (!active) {
+      settle();
+      firstRun.current = true;
       return;
     }
 
     gsap.set(rows, { opacity: 0, y: 5 });
 
     let tween: gsap.core.Tween | null = null;
-    const guard = window.setTimeout(run, 3600);
-
-    function run() {
-      window.clearTimeout(guard);
+    const deal = (d: number, stagger: number) => {
       tween = gsap.to(rows, {
         opacity: 1,
         y: 0,
         duration: 0.45,
-        delay,
-        stagger: 0.26,
+        delay: d,
+        stagger,
         ease: EASE.out,
       });
+    };
+
+    // The opening run waits for the boot gate and reads at a conversational
+    // pace. A swap is a re-read of the room, so it lands faster.
+    if (animateOnBoot && firstRun.current) {
+      firstRun.current = false;
+      const guard = window.setTimeout(() => deal(delay, 0.26), 3600);
+      const off = onBooted(() => {
+        window.clearTimeout(guard);
+        deal(delay, 0.26);
+      });
+      return () => {
+        window.clearTimeout(guard);
+        off();
+        tween?.kill();
+      };
     }
 
-    const off = onBooted(run);
+    firstRun.current = false;
+    deal(0, 0.085);
 
     return () => {
-      window.clearTimeout(guard);
-      off();
       tween?.kill();
     };
-  }, [animateOnBoot, delay]);
+  }, [active, animateOnBoot, delay]);
 
   return (
     <div ref={root} className={`panel ${className}`}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { SITE } from "@/lib/site";
 
 const fmt = () =>
@@ -9,15 +9,20 @@ const fmt = () =>
     timeZone: "America/New_York",
   });
 
-export default function StatusBar() {
-  // Rendered null on the server so the clock cannot cause a hydration mismatch.
-  const [clock, setClock] = useState<string | null>(null);
+/* A ticking clock is external state, not render state. useSyncExternalStore
+   gives React a server snapshot to hydrate against, so the clock can be
+   client-only without a hydration mismatch and without setState in an
+   effect. getSnapshot returns a string, which compares by value, so React
+   only re-renders on the second boundary. */
+const subscribe = (onChange: () => void) => {
+  const id = window.setInterval(onChange, 1000);
+  return () => window.clearInterval(id);
+};
 
-  useEffect(() => {
-    setClock(fmt());
-    const id = window.setInterval(() => setClock(fmt()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
+const getServerSnapshot = (): string | null => null;
+
+export default function StatusBar() {
+  const clock = useSyncExternalStore(subscribe, fmt, getServerSnapshot);
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-line bg-ink-deep">
@@ -34,11 +39,11 @@ export default function StatusBar() {
             </span>
           </div>
 
-          <span className="t-label hidden text-bone-mute sm:block">
+          <span className="t-label hidden text-bone-dim sm:block">
             {SITE.coords}
           </span>
 
-          <span className="t-label text-bone-mute">
+          <span className="t-label text-bone-dim">
             <span>EST </span>
             {clock ?? "--:--:--"}
           </span>

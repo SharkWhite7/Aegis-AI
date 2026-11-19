@@ -502,3 +502,32 @@ body {
     var(--shell-pad) + max(0px, (100vw - var(--container-shell)) / 2)
   );
 }
+
+/* Game control. Hard-edged, underlined on selection — never a pill, never
+   a filled chip. The rule wipes in rather than appearing. */
+.game-pick {
+  position: relative;
+  padding-bottom: 0.5em;
+  cursor: pointer;
+  transition: color 0.3s var(--ease-out-expo);
+}
+
+.game-pick::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: var(--color-magenta);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s var(--ease-out-expo);
+}
+
+.game-pick[aria-checked="true"]::after {
+  transform: scaleX(1);
+}
+
+.game-pick:hover {
+  color: var(--color-bone);
+}

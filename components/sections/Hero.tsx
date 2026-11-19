@@ -1,18 +1,7 @@
 import Reveal, { MaskLine } from "@/lib/motion/Reveal";
 import SectionLabel from "@/components/primitives/SectionLabel";
-import Console from "@/components/primitives/Console";
+import GameConsole from "@/components/sections/hero/GameConsole";
 import { SITE } from "@/lib/site";
-import type { Turn } from "@/lib/personas";
-
-/* Scripted demo, not persona data — it carries a player turn and the music
-   handoff, which the dossier transcripts in section 03 deliberately do not. */
-const HERO_TRANSCRIPT: Turn[] = [
-  { t: "22:14", text: "you pulled off the freeway. we doing this or not?" },
-  { t: "22:14", text: "buyer in little havana wants the coupe. forty grand, no guns." },
-  { t: "22:15", who: "you", text: "how long" },
-  { t: "22:15", text: "eleven minutes on the causeway. nine if you stop asking." },
-  { t: "22:16", text: "putting something on for the drive." },
-];
 
 const FACTS: Array<[string, string]> = [
   ["01", "Runs alongside the game. No mods, no injection."],
@@ -52,7 +41,7 @@ export default function Hero() {
           </div>
           <div className="col-span-5 flex justify-end">
             <p className="t-label text-right text-bone-mute">
-              Entry point &mdash; GTA VI
+              Any title. Four shown.
             </p>
           </div>
         </div>
@@ -85,13 +74,7 @@ export default function Hero() {
             delay={0.62}
             className="col-span-12 lg:col-span-4 lg:mt-2"
           >
-            <Console
-              turns={HERO_TRANSCRIPT}
-              title="The Hustler"
-              nowPlaying="night tape — side b"
-              animateOnBoot
-              delay={0.95}
-            />
+            <GameConsole />
           </Reveal>
         </div>
       </div>
