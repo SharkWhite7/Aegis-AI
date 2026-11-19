@@ -4,7 +4,7 @@ import BuildBar from "./access/BuildBar";
 
 export default function Access() {
   return (
-    <Section id="access" n="09" label="Access">
+    <Section id="access" n="10" label="Access">
       <div className="grid-12 items-end gap-y-10">
         <Reveal
           as="h2"
