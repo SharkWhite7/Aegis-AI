@@ -7,6 +7,7 @@ import Nav from "@/components/chrome/Nav";
 import StatusBar from "@/components/chrome/StatusBar";
 import Texture from "@/components/chrome/Texture";
 import ColumnGuides from "@/components/chrome/ColumnGuides";
+import Frame from "@/components/chrome/Frame";
 import { SITE } from "@/lib/site";
 
 /* Display face: Archivo's variable width axis gives a real condensed cut
@@ -70,16 +71,26 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
 
-        <SmoothScroll />
-        <Nav />
-
-        <main id="main" className="pb-[var(--bar-h)]">
+        {/* The site's chrome is handed to Frame rather than rendered
+            here, so app routes under /console can leave it out. See
+            components/chrome/Frame.tsx. */}
+        <Frame
+          siteBefore={
+            <>
+              <SmoothScroll />
+              <Nav />
+            </>
+          }
+          siteAfter={
+            <>
+              <StatusBar />
+              <ColumnGuides />
+              <Texture />
+            </>
+          }
+        >
           {children}
-        </main>
-
-        <StatusBar />
-        <ColumnGuides />
-        <Texture />
+        </Frame>
       </body>
     </html>
   );
