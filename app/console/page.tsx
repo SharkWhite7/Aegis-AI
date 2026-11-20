@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { currentPlayer } from "./_lib/session";
 import { signInReadiness } from "./_lib/config";
+import { listAgents } from "./_lib/backend";
+import Begin from "./_lib/Begin";
 import Notice from "./_lib/Notice";
 
 /**
@@ -86,39 +88,51 @@ async function Door() {
     );
   }
 
+  const agents = await listAgents();
+
   return (
-    <div className="grid-12 gap-y-12">
-      <div className="col-span-12 lg:col-span-7">
-        <p className="t-label text-bone-dim">Signed in</p>
-        <h1 className="t-display-s mt-4 text-bone">
-          {player.displayName ?? player.handle}
-          <span className="text-magenta">.</span>
-        </h1>
-        <p className="t-mono mt-3 text-bone-dim">@{player.handle}</p>
-
-        <hr className="rule my-10" />
-
-        <p className="t-label text-bone-dim">What is built</p>
-        <p className="t-body-lg mt-4 max-w-[46ch] text-bone-dim">
-          Sign-in, and nothing past it. Naming a game, choosing a voice and
-          talking to it are the next piece of work — they are not here yet,
-          and a button that led nowhere would be worse than this sentence.
-        </p>
-
-        <form action="/console/auth/signout" method="post" className="mt-10">
+    <div className="space-y-16">
+      <div className="flex flex-wrap items-baseline justify-between gap-6">
+        <div>
+          <p className="t-label text-bone-dim">Signed in</p>
+          <h1 className="t-display-s mt-3 text-bone">
+            {player.displayName ?? player.handle}
+            <span className="text-magenta">.</span>
+          </h1>
+        </div>
+        <form action="/console/auth/signout" method="post">
           <button type="submit" className="btn-stamp">
             Sign out
           </button>
         </form>
       </div>
 
-      <div className="col-span-12 lg:col-span-4 lg:col-start-9">
-        <Notice />
-        <p className="t-micro mt-8 text-bone-dim">
-          <Link href="/" className="link-wipe">
+      <hr className="rule" />
+
+      {agents.length > 0 ? (
+        <Begin agents={agents} />
+      ) : (
+        <div className="panel p-6">
+          <p className="t-label text-bone-dim">No voices available</p>
+          <p className="t-small mt-4 max-w-[52ch] text-bone-dim">
+            The companion service did not return any. It is either not
+            running or not reachable at the address this build was given,
+            so there is nothing to start a session with.
+          </p>
+        </div>
+      )}
+
+      <hr className="rule" />
+
+      <div className="grid-12 gap-y-8">
+        <div className="col-span-12 lg:col-span-5">
+          <Notice />
+        </div>
+        <div className="col-span-12 lg:col-span-3 lg:col-start-10 lg:text-right">
+          <Link href="/" className="t-micro link-wipe text-bone-dim">
             Back to the site
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );

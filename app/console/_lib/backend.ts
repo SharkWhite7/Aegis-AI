@@ -115,3 +115,118 @@ export async function signOut(token: string): Promise<void> {
     /* ignored on purpose */
   }
 }
+
+// ── The companion ────────────────────────────────────────────────────────
+
+export type Agent = {
+  id: string;
+  slug: string;
+  name: string;
+  role: string;
+  source: "builtin" | "community";
+  starCount: number;
+};
+
+export type GameProfile = {
+  id: string;
+  slug: string;
+  title: string;
+  status: "generated" | "pre_release" | "unknown";
+};
+
+export type Turn = {
+  id: string;
+  seq: number;
+  role: "player" | "copilot";
+  text: string;
+  createdAt: string;
+};
+
+export type ChatSession = {
+  id: string;
+  gameProfileId: string;
+  agentId: string;
+  startedAt: string;
+  endedAt: string | null;
+  summary: string | null;
+  turnCount: number;
+};
+
+export async function listAgents(): Promise<Agent[]> {
+  const { status, body } = await call("/agents?limit=50");
+  if (status !== 200) return [];
+  return (body["agents"] as Agent[] | undefined) ?? [];
+}
+
+export async function startSession(
+  token: string,
+  input: { gameTitle: string; agentId: string },
+): Promise<{ session: ChatSession; profile: GameProfile; agent: Agent }> {
+  const { status, body } = await call("/chat/sessions", {
+    method: "POST",
+    token,
+    body: { gameTitle: input.gameTitle, agentId: input.agentId },
+  });
+  if (status !== 201) {
+    throw new BackendUnavailableError(
+      (body["message"] as string | undefined) ?? `could not start a session (${status})`,
+    );
+  }
+  return body as unknown as { session: ChatSession; profile: GameProfile; agent: Agent };
+}
+
+export type TurnResult = {
+  refused: boolean;
+  copilotTurn: Turn | null;
+  latencyMs: number;
+};
+
+export async function takeTurn(
+  token: string,
+  sessionId: string,
+  text: string,
+): Promise<TurnResult> {
+  const { status, body } = await call(`/chat/sessions/${sessionId}/turns`, {
+    method: "POST",
+    token,
+    body: { text },
+  });
+  // 422 is the companion declining, which is a real outcome and not an
+  // error to hide: the caller shows that nothing was said.
+  if (status !== 200 && status !== 422) {
+    throw new BackendUnavailableError(
+      (body["message"] as string | undefined) ?? `the turn failed (${status})`,
+    );
+  }
+  return {
+    refused: Boolean(body["refused"]),
+    copilotTurn: (body["copilotTurn"] as Turn | null) ?? null,
+    latencyMs: Number(body["latencyMs"] ?? 0),
+  };
+}
+
+export async function getTurns(token: string, sessionId: string): Promise<Turn[]> {
+  const { status, body } = await call(`/chat/sessions/${sessionId}/turns`, { token });
+  if (status !== 200) return [];
+  return (body["turns"] as Turn[] | undefined) ?? [];
+}
+
+export type EndResult = {
+  session: ChatSession;
+  debrief: { memoriesStored: number; summarySource: string } | null;
+};
+
+export async function endSession(
+  token: string,
+  sessionId: string,
+): Promise<EndResult> {
+  const { status, body } = await call(`/chat/sessions/${sessionId}/end`, {
+    method: "POST",
+    token,
+    body: {},
+  });
+  if (status !== 200) {
+    throw new BackendUnavailableError(`could not close the session (${status})`);
+  }
+  return body as unknown as EndResult;
+}

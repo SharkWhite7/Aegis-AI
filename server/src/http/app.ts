@@ -25,9 +25,8 @@ import type { Db } from "../db/db.ts";
 import type { ModelAdapter } from "../model/adapter.ts";
 import { mapError, UnauthorizedError } from "./errors.ts";
 import { fixedWindow, type RateLimiter } from "./ratelimit.ts";
-import { requireString } from "../domain/validate.ts";
+import { requireHandle, requireString } from "../domain/validate.ts";
 import { joinWaitlist } from "../waitlist/service.ts";
-import { createPlayer, findPlayerById } from "../players/repo.ts";
 import {
   createAgent,
   findAgentBySlug,
@@ -41,6 +40,7 @@ import {
 import { endSession, recentTurns, startSession, takeTurn } from "../chat/service.ts";
 import { remember } from "../memory/repo.ts";
 import { ensureProfile, findBySlug } from "../profiles/repo.ts";
+import { createPlayer, findPlayerById, findPlayerByHandle } from "../players/repo.ts";
 import {
   authenticate,
   issueSession,
@@ -63,6 +63,12 @@ export type AppOptions = {
    * POST /auth/discord refuses every request rather than accepting any.
    */
   serviceToken?: string | undefined;
+  /**
+   * Enables POST /auth/dev, which signs anyone in as any handle with no
+   * proof. Decided by devSignInAllowed() in src/auth/dev.ts, never by a
+   * bare default here. Off unless explicitly passed.
+   */
+  devSignIn?: boolean | undefined;
   logger?: boolean;
 };
 
@@ -187,6 +193,25 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       player,
       created,
     });
+  });
+
+  /**
+   * Development sign-in. Mints a real session for a handle, with no
+   * proof of anything. Off unless the caller passed devSignIn, which
+   * src/auth/dev.ts only allows outside production and behind an
+   * explicit opt-in.
+   */
+  app.post("/auth/dev", async (req, reply) => {
+    if (opts.devSignIn !== true) {
+      return reply.code(404).send({ error: "not_found", message: "no such route" });
+    }
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const handle = requireHandle(body["handle"]);
+    const player =
+      (await findPlayerByHandle(db, handle)) ??
+      (await createPlayer(db, { handle }));
+    const { token, session } = await issueSession(db, player.id);
+    return reply.code(200).send({ token, expiresAt: session.expiresAt, player });
   });
 
   app.get("/auth/me", async (req) => {

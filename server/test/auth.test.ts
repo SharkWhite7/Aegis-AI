@@ -11,6 +11,7 @@ import {
 import { buildApp } from "../src/http/app.ts";
 import { StubModelAdapter } from "../src/model/stub.ts";
 import { createPlayer } from "../src/players/repo.ts";
+import { devSignInAllowed, DEV_SIGNIN_OPT_IN } from "../src/auth/dev.ts";
 import { freshDb, seedWorld } from "./helpers.ts";
 
 const SERVICE = "a-shared-service-token";
@@ -262,6 +263,62 @@ test("one player's token cannot act as another player", async () => {
   });
   assert.equal(meAsAna.json().player.id, ana.json().player.id);
   assert.notEqual(ana.json().player.id, bia.json().player.id);
+  await instance.close();
+  await db.close();
+});
+
+// ── The development sign-in, and its gate ────────────────────────────────
+
+test("the dev sign-in gate needs BOTH conditions, and defaults to off", () => {
+  const ok = { NODE_ENV: "development", AEGIS_DEV_SIGNIN: DEV_SIGNIN_OPT_IN };
+  assert.equal(devSignInAllowed(ok), true);
+
+  // Production closes it whatever the flag says. This is the condition
+  // that matters: a flag alone is too easy to set by accident in a deploy.
+  assert.equal(devSignInAllowed({ ...ok, NODE_ENV: "production" }), false);
+
+  // And the flag has to be exact — "true", "1" and "yes" do not open it.
+  for (const flag of [undefined, "", "true", "1", "yes", "YES-I-KNOW-THIS-IS-NOT-AUTH"]) {
+    assert.equal(
+      devSignInAllowed({ NODE_ENV: "development", AEGIS_DEV_SIGNIN: flag }),
+      false,
+      `${String(flag)} must not open the dev sign-in`,
+    );
+  }
+  assert.equal(devSignInAllowed({}), false, "an empty environment is closed");
+});
+
+test("the dev route does not exist unless it is switched on", async () => {
+  const db = freshDb();
+  await seedWorld(db);
+  const instance = buildApp({ db, model: new StubModelAdapter() });
+  const r = await instance.inject({
+    method: "POST", url: "/auth/dev", payload: { handle: "ana" },
+  });
+  assert.equal(r.statusCode, 404, "it must not merely refuse — it must not be there");
+  await instance.close();
+  await db.close();
+});
+
+test("switched on, the dev route signs in and reuses the same player", async () => {
+  const db = freshDb();
+  const instance = buildApp({ db, model: new StubModelAdapter(), devSignIn: true });
+
+  const first = await instance.inject({
+    method: "POST", url: "/auth/dev", payload: { handle: "tester" },
+  });
+  assert.equal(first.statusCode, 200);
+  const second = await instance.inject({
+    method: "POST", url: "/auth/dev", payload: { handle: "tester" },
+  });
+  assert.equal(first.json().player.id, second.json().player.id);
+  assert.notEqual(first.json().token, second.json().token);
+
+  const me = await instance.inject({
+    method: "GET", url: "/auth/me",
+    headers: { authorization: `Bearer ${first.json().token}` },
+  });
+  assert.equal(me.json().player.handle, "tester");
   await instance.close();
   await db.close();
 });
