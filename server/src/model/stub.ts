@@ -61,10 +61,34 @@ export class StubModelAdapter implements ModelAdapter {
     if ("structuredPayload" in this.#opts) {
       return { data: this.#opts.structuredPayload, modelId: this.id, refused: false };
     }
+
+    // The stub serves two different structured callers, so it switches on
+    // the schema it was handed rather than guessing from the prompt.
+    const props = (req.schema["properties"] ?? {}) as Record<string, unknown>;
+    if ("summary" in props && "memories" in props) {
+      // A debrief. Deterministic and deliberately thin: one memory and a
+      // summary derived from the transcript's hash, enough to prove the
+      // path end to end without pretending to be good at the job.
+      const h = digest(req.prompt).slice(0, 8);
+      return {
+        data: {
+          summary: `stub summary ${h}`,
+          memories: [
+            {
+              kind: "event",
+              text: `stub memory ${h}`,
+              salience: 0.5,
+              supersedesId: null,
+            },
+          ],
+        },
+        modelId: this.id,
+        refused: false,
+      };
+    }
     // Default: withhold everything. The honest answer for a stub that knows
     // nothing about any game, and it keeps the generator's safe path the
     // one exercised by default.
-    void req;
     return {
       data: {
         status: "unknown",

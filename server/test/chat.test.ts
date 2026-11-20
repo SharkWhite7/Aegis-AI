@@ -182,7 +182,7 @@ test("the previous session's summary opens the next one", async () => {
   const db = freshDb();
   const model = new RecordingAdapter();
   const { session, player, agent } = await startWith(db, model);
-  await endSession(db, session.id, "drove the causeway, sold nothing");
+  await endSession(db, session.id, { summary: "drove the causeway, sold nothing" });
 
   const next = await startSession(
     db,
@@ -201,7 +201,7 @@ test("a closed session refuses further turns", async () => {
   const db = freshDb();
   const model = new RecordingAdapter();
   const { session } = await startWith(db, model);
-  await endSession(db, session.id, "done");
+  await endSession(db, session.id, { summary: "done" });
   await assert.rejects(
     () => takeTurn(db, { sessionId: session.id, text: "one more" }, model),
     SessionClosedError,

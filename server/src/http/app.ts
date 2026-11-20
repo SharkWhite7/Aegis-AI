@@ -268,10 +268,21 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return { turns: await recentTurns(db, id, 200) };
   });
 
-  app.post("/chat/sessions/:id/end", async (req) => {
+  // Ending a session debriefs it: one model call that writes the summary
+  // and extracts the memories to carry forward. This is the only thing in
+  // the product that creates memories, so it is rate limited like any
+  // other spending route.
+  app.post("/chat/sessions/:id/end", async (req, reply) => {
+    const playerId = await actor(req);
+    if (!spendModelCall(playerId, reply)) return reply;
     const { id } = req.params as { id: string };
     const body = (req.body ?? {}) as Record<string, unknown>;
-    return endSession(db, id, body["summary"]);
+    return endSession(db, id, {
+      summary: body["summary"],
+      // Opt out with {"debrief": false} to close a session without
+      // spending a model call on it.
+      ...(body["debrief"] === false ? {} : { model }),
+    });
   });
 
   // ── Memory ─────────────────────────────────────────────────────────────

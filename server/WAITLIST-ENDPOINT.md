@@ -1,25 +1,52 @@
-# Waitlist endpoint — spec for the site session
+# Waitlist — status and endpoint spec
 
-This is the half of the waitlist that belongs in `app/`, which the backend
-session is not permitted to touch. Everything behind it — validation,
-dedupe, storage — is built and tested in `server/`.
+**Status: the backend half is built and tested; the site half does not
+exist, on purpose.** Nothing is blocked and nothing is broken. This file
+records where it stands and what the contract is for whenever the form
+arrives.
 
-Background: `components/sections/Hero.tsx:93` and
-`components/chrome/Nav.tsx:41` both link to `#access`, and no Access
-section exists in `components/sections/`. The site's primary call to
-action currently points at nothing.
+## Where it stands
 
-## Why this one endpoint lives in the Next app
+The service implements signup capture in full: validation, normalisation,
+dedupe and storage, covered by tests (`server/test/waitlist.test.ts` and
+the waitlist cases in `server/test/http.test.ts`). It sends no mail.
 
-It is a browser form on the marketing site. Same origin means no CORS, no
+The site has no signup form. Checked on `main`: there is no `<form>`, no
+email input and no address collection anywhere in `app/`, `components/`
+or `lib/` — the only `<input>` on the page is the game-title field in
+`components/sections/your-game/ProfileFinder.tsx`.
+
+That is a deliberate position, not an omission. Two commits moved it
+there while this backend was in review:
+
+- `ed704a8` removed the mailing-list promise from the Access section. The
+  line *"Leave an address and you hear from us once, when it opens"* is
+  gone, and the build bar now takes the width where the pitch used to be.
+- `e543260` relabelled both calls to action from **"Request access"** to
+  **"Where it stands"**. They still point at `#access`
+  (`components/sections/Hero.tsx`, `components/chrome/Nav.tsx`), but they
+  now lead to the build bar rather than to a signup.
+
+**The waitlist is deferred, not dropped.** The site's own build bar lists
+it as a planned stage still to come — `{ id: "05", label: "Waitlist",
+state: "queued" }` in `lib/progress.ts`. So the question is when a form
+appears, not whether one was abandoned.
+
+### The earlier "one email" conflict is resolved
+
+A previous version of this file flagged a contradiction: the Access copy
+promised exactly one email ever, while `confirmed_at` in the schema
+implies double opt-in, which means two. `ed704a8` removed that promise,
+so there is nothing left to contradict. `confirmed_at` can stay or go
+without friction; it is unused either way, since no mail is sent.
+
+## The contract, for when a form is added
+
+The endpoint belongs in the Next app, not in this service: it is a
+browser form on the marketing site, so same origin means no CORS, no
 preflight and no second hostname, and it ships and rolls back with the
-page that contains the form. Everything companion-related stays in the
-separate service, whose consumer is the desktop client, not the browser.
-
-Next 16 Route Handlers can only live inside `app/`, which is why this file
-is a spec rather than an implementation.
-
-## The contract
+page that contains it. Next 16 Route Handlers can only live inside
+`app/`, which is why this file is a spec rather than an implementation.
 
 ```
 POST /api/waitlist
@@ -32,39 +59,39 @@ Content-Type: application/json
 }
 ```
 
-Responses:
-
 | Status | Body | When |
 |---|---|---|
-| `202` | `{ "ok": true }` | Valid address. **Also returned when the address was already on the list.** |
+| `202` | `{ "ok": true }` | Valid address. **Also returned when the address was already stored.** |
 | `400` | `{ "error": "invalid_request", "message": "...", "field": "email" }` | Bad or missing address, unrecognised `source`. |
 | `429` | `{ "error": "rate_limited", "message": "...", "retryAfterSeconds": 60 }` | Too many signups from one address. |
 
 ### Three rules that are not arbitrary
 
-1. **A repeat signup must look identical to a new one.** Replying "you are
-   already on the list" turns the form into a way of testing whether a
-   given person signed up. The server already answers `202 {ok:true}`
-   either way and stores no second row.
+1. **A repeat signup must look identical to a new one.** Replying "you
+   are already on the list" turns the form into a way of testing whether
+   a given person signed up. The service answers `202 {ok:true}` either
+   way and stores no second row.
 
 2. **Never render a signup count.** "1,842 on the list" is a fabricated
    metric by construction, and `lib/site.ts` carries
-   `stage: "PRE-ALPHA"`. The service deliberately exposes no count
-   endpoint — a test asserts that `GET /waitlist` and
-   `GET /waitlist/count` both 404.
+   `stage: "PRE-ALPHA"`. The service exposes no count endpoint — a test
+   asserts that `GET /waitlist` and `GET /waitlist/count` both 404.
 
-3. **The confirmation copy must not imply access exists.** Nothing is
-   shipped. "You're on the list" is true; "Welcome to AEGIS AI" is not.
+3. **Whatever the confirmation copy says must be true.** The old promise
+   was removed rather than softened, which is the right instinct. If a
+   form returns, its copy has to match what actually happens: nothing is
+   shipped, so "you're on the list" is true and "welcome to AEGIS AI" is
+   not.
 
-`gameTitle` is the most useful field on the form: it says which profiles
-to generate first. Optional, because requiring it costs signups.
+`gameTitle` would be the most useful field on the form: it says which
+profiles to generate first. Optional, because requiring it costs signups.
 
 ## Two ways to wire it up
 
-### A. Proxy to the service (recommended once it is deployed)
+### A. Proxy to the service (preferred)
 
 `app/api/waitlist/route.ts` forwards the body and passes the status
-through. Keeps one implementation of the rules.
+through, so the rules live in one place.
 
 ```ts
 // app/api/waitlist/route.ts
@@ -98,17 +125,17 @@ export async function POST(request: Request) {
 }
 ```
 
-Note for whoever writes this: the route must read the client's address and
-forward it (e.g. as `x-forwarded-for`) if the per-address rate limit is to
-mean anything — otherwise every signup looks like it came from the Next
-server. Alternatively rate-limit in the route itself.
+One thing to get right: the route must forward the client's address (for
+example as `x-forwarded-for`) or the per-address rate limit means
+nothing, because every signup would look like it came from the Next
+server. Rate-limiting in the route itself is the alternative.
 
 ### B. Call the service's code directly
 
-If the site and the service end up deployed together, import
-`joinWaitlist` from `server/src/waitlist/service.ts` and open the database
-in the route. Avoids a network hop, at the cost of coupling the two
-deploys — which is the thing the split was meant to avoid, so prefer A.
+If the site and the service are deployed together, import `joinWaitlist`
+from `server/src/waitlist/service.ts` and open the database in the route.
+Avoids a network hop, at the cost of coupling the two deploys — which is
+what the split was meant to avoid, so prefer A.
 
 ## Verified behaviour
 
@@ -122,32 +149,3 @@ POST /waitlist {"email":"ANA@example.com","source":"nav"}
 POST /waitlist {"email":"nope"}
   -> 400 {"error":"invalid_request","message":"email: is not a valid email address","field":"email"}
 ```
-
-## One conflict to resolve: "you hear from us once"
-
-`components/sections/Access.tsx` now ships this copy:
-
-> Leave an address and you hear from us once, when it opens.
-> Once. Not a newsletter, not a drip sequence, not a launch countdown.
-
-The schema has a `confirmed_at` column for double opt-in, and a test
-asserts new rows are never pre-confirmed. **Double opt-in means two
-emails** — a confirmation now and the launch notice later — which
-contradicts that promise as written.
-
-The service does not send any mail today, so nothing is broken yet. But
-the two cannot both ship. Three ways out, and it is a product call:
-
-1. **No confirmation mail.** Keeps the promise exactly. `confirmed_at`
-   stays unused, and unverified addresses stay on the list — accepting
-   typos, bounces, and addresses entered by someone other than their
-   owner.
-2. **Confirm, and adjust the copy** to "one email to confirm, then one
-   when it opens." Honest, and slightly less good as copy.
-3. **Confirm only where it matters** — e.g. only when an address bounces
-   or is reported. Keeps the promise for almost everyone.
-
-The column is kept for now because it costs nothing and option 1 is not
-obviously right: an address nobody verified is a real liability at launch,
-when it is the only mail that will ever be sent. It is flagged rather than
-decided.

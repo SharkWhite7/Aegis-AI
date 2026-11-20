@@ -15,7 +15,8 @@ import { newId, now } from "../domain/ids.ts";
 import type { Agent, GameProfile, Session, Turn, TurnRole } from "../domain/types.ts";
 import { requireString, optionalString } from "../domain/validate.ts";
 import { buildDigest, type Digest } from "../memory/digest.ts";
-import { liveMemories, markReferenced } from "../memory/repo.ts";
+import { liveMemories, markReferenced, remember, supersede } from "../memory/repo.ts";
+import { runDebrief } from "../memory/debrief.ts";
 import { findAgentById, NotFoundError } from "../marketplace/agents.ts";
 import { ensureProfile, findById as findProfileById } from "../profiles/repo.ts";
 import type { ModelAdapter, SpeakMessage } from "../model/adapter.ts";
@@ -312,24 +313,119 @@ async function appendTurn(
 
 // ── Ending a session ─────────────────────────────────────────────────────
 
+export type DebriefReport = {
+  /** Where the stored summary came from. */
+  summarySource: "provided" | "generated" | "none";
+  memoriesStored: number;
+  supersededCount: number;
+  /** Supersession targets the model named that did not belong to this player. */
+  rejectedSupersessions: number;
+  droppedCandidates: number;
+  modelId: string;
+};
+
+export type EndSessionResult = {
+  session: Session;
+  /** Null when no debrief ran: no model, no turns, or already closed. */
+  debrief: DebriefReport | null;
+};
+
+export type EndSessionOptions = {
+  /** An explicit summary. Overrides the generated one if both exist. */
+  summary?: unknown;
+  /** When given, the session is debriefed: summary and memories extracted. */
+  model?: ModelAdapter;
+};
+
 /**
- * Closes a session and records its summary. The summary is what the next
- * session's digest opens with, so a session that ends without one is a
- * hole in the player's history.
+ * Closes a session, and debriefs it.
+ *
+ * The debrief is what makes memory a feature rather than a schema: until
+ * this runs, nothing in the product writes a memory, and a session that
+ * ends without one is a hole in the player's history.
+ *
+ * Idempotent. A session that is already closed is returned untouched and
+ * is NOT debriefed again — re-running would spend a model call to store
+ * duplicates of what the first run already stored.
  */
 export async function endSession(
   db: Db,
   sessionId: string,
-  summary: unknown,
-): Promise<Session> {
+  opts: EndSessionOptions = {},
+): Promise<EndSessionResult> {
   const session = await findSession(db, sessionId);
   if (!session) throw new NotFoundError("session");
 
-  const text = optionalString(summary, "summary", { max: 1200 });
-  const stamp = now();
-  await db.run(
-    "UPDATE session SET ended_at = ?, summary = ? WHERE id = ?",
-    [stamp, text, sessionId],
+  const provided = optionalString(opts.summary, "summary", { max: 1200 });
+
+  if (session.endedAt !== null) {
+    // Already closed. Say so by returning it unchanged rather than
+    // throwing: closing twice is a harmless client retry, and charging a
+    // second debrief for it would not be.
+    return { session, debrief: null };
+  }
+
+  const turns = await recentTurns(db, sessionId, 200);
+
+  // No model, or nothing was said: close with whatever the caller gave us
+  // and spend nothing. A debrief of an empty transcript has no content to
+  // find, and asking for one anyway is how you get invented memories.
+  if (!opts.model || turns.length === 0) {
+    return { session: await close(db, session, provided), debrief: null };
+  }
+
+  const existing = await liveMemories(db, session.playerId, {
+    gameProfileId: session.gameProfileId,
+  });
+
+  const debrief = await runDebrief(
+    turns.map((t) => ({ role: t.role, text: t.text })),
+    existing,
+    opts.model,
   );
-  return { ...session, endedAt: stamp, summary: text };
+
+  let supersededCount = 0;
+  for (const candidate of debrief.memories) {
+    const stored = await remember(db, {
+      playerId: session.playerId,
+      sessionId: session.id,
+      gameProfileId: session.gameProfileId,
+      kind: candidate.kind,
+      text: candidate.text,
+      salience: candidate.salience,
+    });
+    if (candidate.supersedesId !== null) {
+      await supersede(db, candidate.supersedesId, stored.id);
+      supersededCount += 1;
+    }
+  }
+
+  const summary = provided ?? debrief.summary;
+
+  return {
+    session: await close(db, session, summary),
+    debrief: {
+      summarySource:
+        provided !== null ? "provided" : debrief.summary !== null ? "generated" : "none",
+      memoriesStored: debrief.memories.length,
+      supersededCount,
+      rejectedSupersessions: debrief.rejectedSupersessions,
+      droppedCandidates: debrief.droppedCandidates,
+      modelId: debrief.modelId,
+    },
+  };
 }
+
+const close = async (
+  db: Db,
+  session: Session,
+  summary: string | null,
+): Promise<Session> => {
+  const stamp = now();
+  await db.run("UPDATE session SET ended_at = ?, summary = ? WHERE id = ?", [
+    stamp,
+    summary,
+    session.id,
+  ]);
+  return { ...session, endedAt: stamp, summary };
+};
