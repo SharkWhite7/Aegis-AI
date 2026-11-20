@@ -15,6 +15,7 @@ import { insertProfile } from "../src/profiles/repo.ts";
 import { StubModelAdapter } from "../src/model/stub.ts";
 import type {
   ModelAdapter,
+  SpeakEvent,
   SpeakRequest,
   SpeakResult,
   StructuredRequest,
@@ -27,8 +28,13 @@ class RecordingAdapter implements ModelAdapter {
   readonly id = "recording";
   readonly calls: SpeakRequest[] = [];
   readonly #inner = new StubModelAdapter();
-  async speak(req: SpeakRequest): Promise<SpeakResult> {
+  // Records here, not in speak(): a turn now goes through the streaming
+  // path, and speak() is only that path drained.
+  speakStream(req: SpeakRequest): AsyncIterable<SpeakEvent> {
     this.calls.push(req);
+    return this.#inner.speakStream(req);
+  }
+  async speak(req: SpeakRequest): Promise<SpeakResult> {
     return this.#inner.speak(req);
   }
   async structured(req: StructuredRequest): Promise<StructuredResult> {

@@ -78,6 +78,7 @@ test("ensureProfile generates once and reuses afterwards", async () => {
   const counting = new StubModelAdapter();
   const wrapped = {
     id: counting.id,
+    speakStream: counting.speakStream.bind(counting),
     speak: counting.speak.bind(counting),
     structured: async (r: Parameters<typeof counting.structured>[0]) => {
       calls += 1;

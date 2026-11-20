@@ -183,11 +183,25 @@ const previousSummary = async (
   return row?.summary ?? null;
 };
 
-export async function takeTurn(
+/**
+ * Everything a turn needs before the model is asked anything.
+ *
+ * Shared by the whole-reply and streaming paths so the assembly of the
+ * four parts — profile, voice, memory digest, player context — has one
+ * implementation. It is the core of the product; two copies of it would
+ * drift and only one of them would be tested.
+ */
+async function prepareTurn(
   db: Db,
   input: TakeTurnInput,
-  model: ModelAdapter,
-): Promise<TakeTurnResult> {
+): Promise<{
+  session: Session;
+  playerTurn: Turn;
+  systemStable: string;
+  systemVolatile: string;
+  messages: SpeakMessage[];
+  digest: Digest;
+}> {
   const text = requireString(input.text, "text", { max: 2000 });
   const liveContext = optionalString(input.liveContext, "liveContext", {
     max: 4000,
@@ -202,7 +216,7 @@ export async function takeTurn(
   const agent = await findAgentById(db, session.agentId);
   if (!agent) throw new NotFoundError("agent");
 
-  // Append the player's turn before calling the model. If the model call
+  // The player's turn is appended before the model is called. If the call
   // fails the player's words are still on the record, which is the
   // behaviour you want: losing what someone said is worse than a missing
   // reply they can see failed.
@@ -218,55 +232,125 @@ export async function takeTurn(
     budgetTokens: input.digestBudgetTokens ?? DEFAULT_DIGEST_BUDGET,
   });
 
-  const messages: SpeakMessage[] = [
-    ...history.map((t) => ({ role: t.role, text: t.text })),
-    { role: "player" as const, text },
-  ];
-
-  const startedAt = Date.now();
-  const spoken = await model.speak({
+  return {
+    session,
+    playerTurn,
     systemStable: buildStablePrompt(profile, agent),
     systemVolatile: buildVolatilePrompt({ digest: digest.text, liveContext }),
-    messages,
-  });
-  const latencyMs = Date.now() - startedAt;
+    messages: [
+      ...history.map((t) => ({ role: t.role, text: t.text })),
+      { role: "player" as const, text },
+    ],
+    digest,
+  };
+}
 
-  if (spoken.refused) {
-    // Nothing is fabricated in the companion's voice. The caller decides
-    // what to show; the transcript records that no reply was produced.
-    return {
-      playerTurn,
-      copilotTurn: null,
-      refused: true,
-      latencyMs,
-      digest: {
-        usedTokens: digest.usedTokens,
-        droppedCount: digest.droppedCount,
-        includedIds: digest.includedIds,
-      },
+// ── Streaming a turn ─────────────────────────────────────────────────────
+
+export type TurnStreamEvent =
+  | { type: "player"; turn: Turn }
+  | { type: "delta"; text: string }
+  | {
+      type: "done";
+      copilotTurn: Turn | null;
+      refused: boolean;
+      latencyMs: number;
+      digest: Pick<Digest, "usedTokens" | "droppedCount" | "includedIds">;
     };
+
+/**
+ * A turn, a piece at a time.
+ *
+ * The reply is persisted in a `finally`, so a consumer that walks away
+ * mid-stream still leaves a correct transcript: what the companion
+ * actually said is on the record, and the player's words were already
+ * there. Nothing is invented to fill the gap — a reply cut short is
+ * stored as what was said, not padded out.
+ *
+ * A refusal persists nothing. Partial text before a refusal is not a
+ * reply, and storing it would put words in the companion's mouth.
+ */
+export async function* takeTurnStream(
+  db: Db,
+  input: TakeTurnInput,
+  model: ModelAdapter,
+): AsyncGenerator<TurnStreamEvent> {
+  const prep = await prepareTurn(db, input);
+  yield { type: "player", turn: prep.playerTurn };
+
+  const startedAt = Date.now();
+  let spoken = "";
+  let refused = false;
+  let copilotTurn: Turn | null = null;
+
+  try {
+    for await (const event of model.speakStream({
+      systemStable: prep.systemStable,
+      systemVolatile: prep.systemVolatile,
+      messages: prep.messages,
+    })) {
+      if (event.type === "delta") {
+        spoken += event.text;
+        yield { type: "delta", text: event.text };
+      } else {
+        refused = event.refused;
+      }
+    }
+  } finally {
+    // Runs whether the stream finished, threw, or the consumer abandoned
+    // it — an async generator's finally runs when it is returned early.
+    if (!refused && spoken.trim().length > 0) {
+      copilotTurn = await appendTurn(
+        db,
+        prep.session.id,
+        "copilot",
+        spoken.trim(),
+        Date.now() - startedAt,
+      );
+      await markReferenced(db, prep.digest.includedIds);
+    }
   }
 
-  const copilotTurn = await appendTurn(
-    db,
-    session.id,
-    "copilot",
-    spoken.text,
-    latencyMs,
-  );
-  await markReferenced(db, digest.includedIds);
-
-  return {
-    playerTurn,
+  yield {
+    type: "done",
     copilotTurn,
-    refused: false,
-    latencyMs,
+    refused,
+    latencyMs: Date.now() - startedAt,
     digest: {
-      usedTokens: digest.usedTokens,
-      droppedCount: digest.droppedCount,
-      includedIds: digest.includedIds,
+      usedTokens: prep.digest.usedTokens,
+      droppedCount: prep.digest.droppedCount,
+      includedIds: prep.digest.includedIds,
     },
   };
+}
+
+/**
+ * A turn, as one reply.
+ *
+ * Drains the streaming path rather than duplicating it, so there is one
+ * implementation of a turn and the two forms cannot disagree.
+ */
+export async function takeTurn(
+  db: Db,
+  input: TakeTurnInput,
+  model: ModelAdapter,
+): Promise<TakeTurnResult> {
+  let playerTurn: Turn | null = null;
+
+  for await (const event of takeTurnStream(db, input, model)) {
+    if (event.type === "player") playerTurn = event.turn;
+    else if (event.type === "done") {
+      if (!playerTurn) throw new Error("the stream ended without a player turn");
+      return {
+        playerTurn,
+        copilotTurn: event.copilotTurn,
+        refused: event.refused,
+        latencyMs: event.latencyMs,
+        digest: event.digest,
+      };
+    }
+  }
+  throw new Error("the turn stream ended without finishing");
 }
 
 /**
