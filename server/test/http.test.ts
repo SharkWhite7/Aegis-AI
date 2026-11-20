@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildApp } from "../src/http/app.ts";
 import { StubModelAdapter } from "../src/model/stub.ts";
-import { freshDb, seedWorld } from "./helpers.ts";
+import { authHeader, freshDb, seedWorld } from "./helpers.ts";
 import { findAgentBySlug } from "../src/marketplace/agents.ts";
 
 const app = async () => {
@@ -12,7 +12,7 @@ const app = async () => {
   return { db, instance, ...world };
 };
 
-const P = (id: string) => ({ "x-aegis-player": id });
+
 
 test("health reports the stage honestly", async () => {
   const { instance, db } = await app();
@@ -89,7 +89,7 @@ test("publishing and starring an agent moves it to the top", async () => {
   const created = await instance.inject({
     method: "POST",
     url: "/agents",
-    headers: P(player.id),
+    headers: await authHeader(db, player.id),
     payload: {
       name: "The Navigator",
       role: "Knows the back roads.",
@@ -106,13 +106,13 @@ test("publishing and starring an agent moves it to the top", async () => {
 
   assert.equal(
     (await instance.inject({
-      method: "POST", url: `/agents/${agentId}/publish`, headers: P(player.id),
+      method: "POST", url: `/agents/${agentId}/publish`, headers: await authHeader(db, player.id),
     })).statusCode,
     200,
   );
 
   const starred = await instance.inject({
-    method: "POST", url: `/agents/${agentId}/star`, headers: P(other.id),
+    method: "POST", url: `/agents/${agentId}/star`, headers: await authHeader(db, other.id),
   });
   assert.equal(starred.statusCode, 200);
   assert.equal(starred.json().starCount, 1);
@@ -127,16 +127,16 @@ test("publishing and starring an agent moves it to the top", async () => {
 test("an author starring their own agent is a 403", async () => {
   const { instance, db, player } = await app();
   const created = await instance.inject({
-    method: "POST", url: "/agents", headers: P(player.id),
+    method: "POST", url: "/agents", headers: await authHeader(db, player.id),
     payload: {
       name: "The Navigator", role: "Knows the back roads.",
       personaBrief: "A long enough persona brief to satisfy the minimum rule.",
     },
   });
   const agentId = created.json().id as string;
-  await instance.inject({ method: "POST", url: `/agents/${agentId}/publish`, headers: P(player.id) });
+  await instance.inject({ method: "POST", url: `/agents/${agentId}/publish`, headers: await authHeader(db, player.id) });
   const r = await instance.inject({
-    method: "POST", url: `/agents/${agentId}/star`, headers: P(player.id),
+    method: "POST", url: `/agents/${agentId}/star`, headers: await authHeader(db, player.id),
   });
   assert.equal(r.statusCode, 403);
   assert.equal(r.json().error, "forbidden");
@@ -144,15 +144,22 @@ test("an author starring their own agent is a 403", async () => {
   await db.close();
 });
 
-test("acting routes reject an unknown or missing player", async () => {
+test("acting routes refuse anyone who is not signed in", async () => {
   const { instance, db } = await app();
+
+  // No credential at all.
   const missing = await instance.inject({ method: "GET", url: "/agents/mine" });
-  assert.equal(missing.statusCode, 400);
-  const unknown = await instance.inject({
-    method: "GET", url: "/agents/mine", headers: P("not-a-player"),
-  });
-  assert.equal(unknown.statusCode, 400);
-  assert.match(unknown.json().message, /unknown player/);
+  assert.equal(missing.statusCode, 401);
+  assert.equal(missing.json().error, "unauthorized");
+
+  // A token that was never issued, and a player id used as one — which is
+  // exactly what the old header accepted.
+  for (const value of ["Bearer not-a-real-token-at-all", "Bearer short", "notbearer x"]) {
+    const r = await instance.inject({
+      method: "GET", url: "/agents/mine", headers: { authorization: value },
+    });
+    assert.equal(r.statusCode, 401, `${value} must not authenticate`);
+  }
   await instance.close();
   await db.close();
 });
@@ -162,14 +169,14 @@ test("a full chat exchange: session, turn, transcript, end", async () => {
   const agent = await findAgentBySlug(db, "hustler");
 
   const started = await instance.inject({
-    method: "POST", url: "/chat/sessions", headers: P(player.id),
+    method: "POST", url: "/chat/sessions", headers: await authHeader(db, player.id),
     payload: { gameTitle: "Cyberpunk 2077", agentId: agent!.id },
   });
   assert.equal(started.statusCode, 201);
   const sessionId = started.json().session.id as string;
 
   const turn = await instance.inject({
-    method: "POST", url: `/chat/sessions/${sessionId}/turns`, headers: P(player.id),
+    method: "POST", url: `/chat/sessions/${sessionId}/turns`, headers: await authHeader(db, player.id),
     payload: { text: "how long to the docks", liveContext: "just left the freeway" },
   });
   assert.equal(turn.statusCode, 200);
@@ -185,7 +192,7 @@ test("a full chat exchange: session, turn, transcript, end", async () => {
   );
 
   const ended = await instance.inject({
-    method: "POST", url: `/chat/sessions/${sessionId}/end`, headers: P(player.id),
+    method: "POST", url: `/chat/sessions/${sessionId}/end`, headers: await authHeader(db, player.id),
     payload: { summary: "talked about the docks" },
   });
   assert.equal(ended.statusCode, 200);
@@ -205,7 +212,7 @@ test("a model refusal is reported as 422, not as a reply", async () => {
 
   const ok = buildApp({ db, model: new StubModelAdapter() });
   const started = await ok.inject({
-    method: "POST", url: "/chat/sessions", headers: P(world.player.id),
+    method: "POST", url: "/chat/sessions", headers: await authHeader(db, world.player.id),
     payload: { gameTitle: "Cyberpunk 2077", agentId: agent!.id },
   });
   const sessionId = started.json().session.id as string;
@@ -213,7 +220,7 @@ test("a model refusal is reported as 422, not as a reply", async () => {
 
   const refusing = buildApp({ db, model: new StubModelAdapter({ refuse: true }) });
   const r = await refusing.inject({
-    method: "POST", url: `/chat/sessions/${sessionId}/turns`, headers: P(world.player.id),
+    method: "POST", url: `/chat/sessions/${sessionId}/turns`, headers: await authHeader(db, world.player.id),
     payload: { text: "something declined" },
   });
   assert.equal(r.statusCode, 422);
@@ -230,7 +237,7 @@ test("profile lookup never generates; only the POST spends", async () => {
   assert.match(miss.json().message, /no profile on file/);
 
   const generated = await instance.inject({
-    method: "POST", url: "/profiles", headers: P(player.id),
+    method: "POST", url: "/profiles", headers: await authHeader(db, player.id),
     payload: { title: "Hollow Knight" },
   });
   assert.equal(generated.statusCode, 200);
@@ -248,7 +255,7 @@ test("model-spending routes are rate limited per player", async () => {
   const instance = buildApp({
     db, model: new StubModelAdapter(), modelCallsPerWindow: 2, windowMs: 60_000,
   });
-  const headers = P(world.player.id);
+  const headers = await authHeader(db, world.player.id);
 
   const codes: number[] = [];
   for (let i = 0; i < 4; i += 1) {

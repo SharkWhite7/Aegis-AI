@@ -5,21 +5,27 @@
  * site — with one exception, the waitlist, which the site posts to through
  * its own same-origin route handler. See server/README.md.
  *
- * ── Identity, and the gap in it ─────────────────────────────────────────
+ * ── Identity ────────────────────────────────────────────────────────────
  *
- * Routes that act as a player read `x-aegis-player`. That is
- * IDENTIFICATION, NOT AUTHENTICATION: anyone who knows a player id can
- * send it. It is enough to build and test the product's shape and it must
- * not be reachable from the internet as it stands. Real auth is the single
- * thing that has to exist before this service is exposed.
+ * Routes that act as a player read `Authorization: Bearer <token>`, where
+ * the token is a sign-in session issued by `POST /auth/discord` and
+ * revocable by signing out. It replaces the old `x-aegis-player` header,
+ * which identified without authenticating: anyone who knew a player id
+ * could act as that player.
+ *
+ * `POST /auth/discord` is the one route that mints a session without
+ * proving who you are, so it is guarded by a shared service token and may
+ * only be called by the web app — the half that actually completed the
+ * Discord handshake. Without `serviceToken` configured, it is refused
+ * outright rather than left open.
  */
 
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import type { Db } from "../db/db.ts";
 import type { ModelAdapter } from "../model/adapter.ts";
-import { mapError } from "./errors.ts";
+import { mapError, UnauthorizedError } from "./errors.ts";
 import { fixedWindow, type RateLimiter } from "./ratelimit.ts";
-import { ValidationError, requireString } from "../domain/validate.ts";
+import { requireString } from "../domain/validate.ts";
 import { joinWaitlist } from "../waitlist/service.ts";
 import { createPlayer, findPlayerById } from "../players/repo.ts";
 import {
@@ -35,6 +41,13 @@ import {
 import { endSession, recentTurns, startSession, takeTurn } from "../chat/service.ts";
 import { remember } from "../memory/repo.ts";
 import { ensureProfile, findBySlug } from "../profiles/repo.ts";
+import {
+  authenticate,
+  issueSession,
+  revokeSession,
+  serviceTokenMatches,
+  upsertPlayerByDiscord,
+} from "../auth/sessions.ts";
 import { slugify } from "../profiles/normalize.ts";
 
 export type AppOptions = {
@@ -45,6 +58,11 @@ export type AppOptions = {
   windowMs?: number;
   /** Calls per window for waitlist signups, keyed by client address. */
   signupsPerWindow?: number;
+  /**
+   * Shared secret the web app presents to mint sessions. When absent,
+   * POST /auth/discord refuses every request rather than accepting any.
+   */
+  serviceToken?: string | undefined;
   logger?: boolean;
 };
 
@@ -79,14 +97,20 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     reply.code(status).send(body);
   });
 
-  /** Resolves the acting player, or throws a 400. See the header note. */
+  const bearer = (req: FastifyRequest): string | null => {
+    const raw = req.headers["authorization"];
+    const header = Array.isArray(raw) ? raw[0] : raw;
+    if (typeof header !== "string") return null;
+    const [scheme, ...rest] = header.split(" ");
+    if (scheme?.toLowerCase() !== "bearer") return null;
+    const token = rest.join(" ").trim();
+    return token.length > 0 ? token : null;
+  };
+
+  /** Resolves the signed-in player, or throws a 401. */
   const actor = async (req: FastifyRequest): Promise<string> => {
-    const raw = req.headers["x-aegis-player"];
-    const id = requireString(Array.isArray(raw) ? raw[0] : raw, "x-aegis-player", {
-      max: 64,
-    });
-    const player = await findPlayerById(db, id);
-    if (!player) throw new ValidationError("x-aegis-player", "unknown player");
+    const player = await authenticate(db, bearer(req));
+    if (!player) throw new UnauthorizedError();
     return player.id;
   };
 
@@ -128,6 +152,54 @@ export function buildApp(opts: AppOptions): FastifyInstance {
       source: body["source"],
     });
     return reply.code(202).send({ ok: true });
+  });
+
+  // ── Sign in ────────────────────────────────────────────────────────────
+
+  /**
+   * Mints a session for a Discord identity the web app has already
+   * verified. Service-token only: this route trusts its caller about who
+   * the player is, so the caller must prove it is the web app.
+   */
+  app.post("/auth/discord", async (req, reply) => {
+    const raw = req.headers["x-aegis-service"];
+    const presented = Array.isArray(raw) ? raw[0] : raw;
+    if (!serviceTokenMatches(presented, opts.serviceToken)) {
+      // Deliberately indistinguishable from a wrong token: whether the
+      // server has one configured is not something a caller should learn.
+      return reply.code(401).send({
+        error: "unauthorized",
+        message: "this route is not open",
+      });
+    }
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const { player, created } = await upsertPlayerByDiscord(db, {
+      discordId: body["discordId"],
+      username: body["username"],
+      displayName: body["displayName"],
+    });
+    const { token, session } = await issueSession(db, player.id);
+    // The only time the token is ever returned. Only its hash is stored.
+    return reply.code(created ? 201 : 200).send({
+      token,
+      expiresAt: session.expiresAt,
+      player,
+      created,
+    });
+  });
+
+  app.get("/auth/me", async (req) => {
+    const playerId = await actor(req);
+    return { player: await findPlayerById(db, playerId) };
+  });
+
+  app.post("/auth/signout", async (req, reply) => {
+    const token = bearer(req);
+    // Idempotent on purpose: signing out twice, or with a token that is
+    // already dead, is a success. The client's job is to drop the cookie.
+    if (token) await revokeSession(db, token);
+    return reply.code(204).send();
   });
 
   // ── Players ────────────────────────────────────────────────────────────

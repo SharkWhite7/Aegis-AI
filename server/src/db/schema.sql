@@ -34,8 +34,30 @@ CREATE TABLE IF NOT EXISTS player (
   id            TEXT PRIMARY KEY,
   handle        TEXT NOT NULL UNIQUE,
   display_name  TEXT,
+  -- The Discord account this player signs in with. NULL for players made
+  -- before sign-in existed, and for test fixtures.
+  discord_id    TEXT UNIQUE,
   created_at    TEXT NOT NULL
 );
+
+-- ── Sessions a player signs in to ───────────────────────────────────────
+-- Server-side rather than a self-contained signed token, because signing
+-- out has to actually end a session. A player's whole memory sits behind
+-- this; "the cookie expires eventually" is not the same as revoking.
+--
+-- The token itself is NEVER stored. What is stored is its SHA-256, so a
+-- copy of this table does not let anyone sign in as anybody.
+CREATE TABLE IF NOT EXISTS auth_session (
+  id          TEXT PRIMARY KEY,
+  player_id   TEXT NOT NULL REFERENCES player(id) ON DELETE CASCADE,
+  token_hash  TEXT NOT NULL UNIQUE,
+  created_at  TEXT NOT NULL,
+  expires_at  TEXT NOT NULL,
+  revoked_at  TEXT
+);
+
+CREATE INDEX IF NOT EXISTS auth_session_player_idx
+  ON auth_session (player_id, revoked_at);
 
 -- ── Game profiles ───────────────────────────────────────────────────────
 -- One row per title, shared by every player. That reuse is the whole
