@@ -32,6 +32,7 @@ export default function DraftForm() {
           id={nameId}
           name="name"
           type="text"
+          defaultValue={state.draft?.name ?? ""}
           required
           minLength={2}
           maxLength={60}
@@ -50,6 +51,7 @@ export default function DraftForm() {
           id={roleId}
           name="role"
           type="text"
+          defaultValue={state.draft?.role ?? ""}
           required
           minLength={2}
           maxLength={80}
@@ -67,6 +69,7 @@ export default function DraftForm() {
         <textarea
           id={briefId}
           name="personaBrief"
+          defaultValue={state.draft?.personaBrief ?? ""}
           required
           minLength={20}
           maxLength={2000}

@@ -29,15 +29,36 @@ import {
   type MarketAgent,
 } from "../../_lib/market";
 
-/** The caller's token, or null when they are not signed in. */
-async function token(): Promise<string | null> {
+/**
+ * The caller's token, or why there isn't one.
+ *
+ * Three outcomes, not two. `whoAmI` throws when the service cannot be
+ * reached, and returning null for that would make every action below
+ * answer "You are not signed in" — a statement about the player's session
+ * that nothing checked. An action that cannot tell says so.
+ */
+type Auth =
+  | { ok: true; token: string | null }
+  | { ok: false; reason: string };
+
+async function token(): Promise<Auth> {
   const jar = await cookies();
   const value = jar.get(SESSION_COOKIE)?.value;
-  if (!value) return null;
-  // A cookie being present proves nothing: the session may have been
-  // revoked since. Resolving it against the service is the actual check.
-  const player = await whoAmI(value);
-  return player ? value : null;
+  if (!value) return { ok: true, token: null };
+  try {
+    // A cookie being present proves nothing: the session may have been
+    // revoked since. Resolving it against the service is the actual check.
+    const player = await whoAmI(value);
+    return { ok: true, token: player ? value : null };
+  } catch (cause) {
+    return {
+      ok: false,
+      reason:
+        cause instanceof Error
+          ? `The companion service did not answer: ${cause.message}`
+          : "The companion service did not answer.",
+    };
+  }
 }
 
 const failed = (error: string): MarketState => ({ error, note: null });
@@ -60,14 +81,15 @@ export async function toggleStar(
   form: FormData,
 ): Promise<MarketState> {
   const auth = await token();
-  if (!auth) return failed("You are not signed in.");
+  if (!auth.ok) return failed(auth.reason);
+  if (!auth.token) return failed("You are not signed in.");
 
   const agentId = field(form, "agentId");
   const slug = field(form, "slug");
   const wanted = field(form, "intent") === "star";
   if (!agentId) return failed("No agent.");
 
-  const result = wanted ? await star(auth, agentId) : await unstar(auth, agentId);
+  const result = wanted ? await star(auth.token, agentId) : await unstar(auth.token, agentId);
   if (!result.ok) return failed(result.reason);
 
   // Both screens show star state, and the ranking is sorted on it.
@@ -88,18 +110,24 @@ export async function writeDraft(
   _previous: MarketState,
   form: FormData,
 ): Promise<MarketState> {
-  const auth = await token();
-  if (!auth) return failed("You are not signed in.");
-
+  // Read before anything can fail, so every failing path below can hand
+  // the author's text back to the form.
   const name = field(form, "name");
   const role = field(form, "role");
   const personaBrief = field(form, "personaBrief");
+  const typed = { name, role, personaBrief };
+  const lost = (error: string): MarketState => ({ error, note: null, draft: typed });
+
+  const auth = await token();
+  if (!auth.ok) return lost(auth.reason);
+  if (!auth.token) return lost("You are not signed in.");
+
   if (!name || !role || !personaBrief) {
-    return failed("A name, a role and a persona brief — all three.");
+    return lost("A name, a role and a persona brief — all three.");
   }
 
-  const result = await createDraft(auth, { name, role, personaBrief });
-  if (!result.ok) return failed(result.reason);
+  const result = await createDraft(auth.token, typed);
+  if (!result.ok) return lost(result.reason);
 
   revalidatePath("/console/market/mine");
   const agent: MarketAgent = result.value;
@@ -112,13 +140,14 @@ export async function changeVisibility(
   form: FormData,
 ): Promise<MarketState> {
   const auth = await token();
-  if (!auth) return failed("You are not signed in.");
+  if (!auth.ok) return failed(auth.reason);
+  if (!auth.token) return failed("You are not signed in.");
 
   const agentId = field(form, "agentId");
   const publish = field(form, "intent") === "publish";
   if (!agentId) return failed("No agent.");
 
-  const result = await setPublished(auth, agentId, publish);
+  const result = await setPublished(auth.token, agentId, publish);
   if (!result.ok) return failed(result.reason);
 
   const agent = result.value;

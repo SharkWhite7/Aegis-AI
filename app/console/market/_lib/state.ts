@@ -12,6 +12,16 @@ export type MarketState = {
   error: string | null;
   /** A plain statement of what happened, when something did. */
   note: string | null;
+  /**
+   * What the author had typed, echoed back when the write failed.
+   *
+   * React resets an uncontrolled form once its action completes, which
+   * would throw away up to 2,000 characters of someone's writing on a
+   * failure they did not cause. The inputs take these as their
+   * defaultValue, so the reset puts the text back instead of clearing it.
+   * Null on success, which is what empties the form.
+   */
+  draft?: { name: string; role: string; personaBrief: string } | null;
 };
 
-export const NO_STATE: MarketState = { error: null, note: null };
+export const NO_STATE: MarketState = { error: null, note: null, draft: null };

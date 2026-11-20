@@ -1,9 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { SESSION_COOKIE } from "../../_lib/config";
-import { whoAmI } from "../../_lib/backend";
 import { myAgents, type MarketAgent } from "../../_lib/market";
+import { viewer } from "../_lib/viewer";
 import DraftForm from "../_lib/DraftForm";
 import VisibilityButton from "../_lib/VisibilityButton";
 
@@ -49,9 +47,27 @@ export default function MinePage() {
 }
 
 async function Studio() {
-  const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
-  const player = token ? await whoAmI(token) : null;
+  const who = await viewer();
+
+  // Before this, `whoAmI` was called directly and its throw was not
+  // caught, so an unreachable service rendered a 500. Catching it as
+  // "not signed in" would have been worse than the crash: it asserts
+  // something about the player's session that nothing checked.
+  if (!who.ok) {
+    return (
+      <div className="panel p-6">
+        <p className="t-label text-bone-dim">Your agents could not be read</p>
+        <p className="t-small mt-4 max-w-[52ch] text-bone-dim">{who.reason}</p>
+        <p className="t-small mt-4 max-w-[52ch] text-bone-dim">
+          This is not a sign-out. Whether you are signed in could not be
+          established, so nothing is shown and nothing is claimed either
+          way.
+        </p>
+      </div>
+    );
+  }
+
+  const { token, player } = who;
 
   if (!token || !player) {
     return (

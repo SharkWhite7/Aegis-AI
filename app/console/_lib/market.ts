@@ -129,9 +129,21 @@ export async function rankedAgents(
   return ok({ agents: all.slice(0, limit), offset, hasMore: all.length > limit });
 }
 
-/** One agent by slug, or null when the service says there is no such slug. */
-export async function agentBySlug(slug: string): Promise<Result<MarketAgent | null>> {
-  const got = await attempt(`/agents/${encodeURIComponent(slug)}`);
+/**
+ * One agent by slug, or null when the service says there is no such slug.
+ *
+ * The token is not optional in practice, even though the type allows it.
+ * The service scopes a draft to its author, so a call without one is a
+ * call as a stranger: the author's own draft comes back as a 404. Passing
+ * it is what makes the author's own work readable to them.
+ */
+export async function agentBySlug(
+  slug: string,
+  token?: string | null,
+): Promise<Result<MarketAgent | null>> {
+  const got = await attempt(`/agents/${encodeURIComponent(slug)}`, {
+    ...(token ? { token } : {}),
+  });
   if (!got.ok) return got;
 
   const { status, body } = got.value;

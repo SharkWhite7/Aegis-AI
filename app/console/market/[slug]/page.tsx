@@ -2,9 +2,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { SESSION_COOKIE } from "../../_lib/config";
-import { whoAmI } from "../../_lib/backend";
 import { agentBySlug, starState, type MarketAgent } from "../../_lib/market";
+import { viewer } from "../_lib/viewer";
 import StarButton from "../_lib/StarButton";
 
 /**
@@ -35,7 +34,26 @@ export default async function AgentPage({
 }
 
 async function Sheet({ slug }: { slug: string }) {
-  const found = await agentBySlug(slug);
+  // The viewer is resolved before the agent is fetched, because the fetch
+  // is made *as* them: the service scopes a draft to its author, so a
+  // call without the token returns 404 for the author's own work.
+  const who = await viewer();
+  if (!who.ok) {
+    return (
+      <div className="panel p-6">
+        <p className="t-label text-bone-dim">This agent could not be read</p>
+        <p className="t-small mt-4 max-w-[52ch] text-bone-dim">{who.reason}</p>
+        <p className="t-small mt-4 max-w-[52ch] text-bone-dim">
+          Who you are could not be established either, and the answer
+          depends on it: a draft is readable only by whoever wrote it.
+        </p>
+      </div>
+    );
+  }
+
+  const token = who.token;
+  const player = who.player;
+  const found = await agentBySlug(slug, token);
 
   if (!found.ok) {
     return (
@@ -54,9 +72,6 @@ async function Sheet({ slug }: { slug: string }) {
   if (found.value === null) notFound();
 
   const agent = found.value;
-  const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value ?? null;
-  const player = token ? await whoAmI(token) : null;
 
   return (
     <article className="space-y-14">
