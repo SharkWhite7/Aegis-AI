@@ -284,3 +284,59 @@ test("waitlist signups are rate limited by address", async () => {
   await instance.close();
   await db.close();
 });
+
+test("a draft is readable only by its author, and a stranger gets 404", async () => {
+  const { instance, db, player, other } = await app();
+
+  const created = await instance.inject({
+    method: "POST",
+    url: "/agents",
+    headers: await authHeader(db, player.id),
+    payload: {
+      name: "Secret Draft",
+      role: "unreleased",
+      personaBrief: "PRIVATE: an unpublished prompt that has not been shared.",
+    },
+  });
+  assert.equal(created.statusCode, 201);
+  const slug = created.json().slug as string;
+  assert.equal(created.json().visibility, "draft");
+
+  // THE POINT: before this rule existed, the slug alone handed a stranger
+  // the full personaBrief of an unpublished agent, with a 200.
+  const stranger = await instance.inject({ method: "GET", url: `/agents/${slug}` });
+  assert.equal(stranger.statusCode, 404, "an unauthenticated reader must not see a draft");
+  assert.ok(
+    !JSON.stringify(stranger.json()).includes("PRIVATE"),
+    "the persona brief must not leak in the error body either",
+  );
+
+  // Another signed-in player is still a stranger to it.
+  const someoneElse = await instance.inject({
+    method: "GET",
+    url: `/agents/${slug}`,
+    headers: await authHeader(db, other.id),
+  });
+  assert.equal(someoneElse.statusCode, 404);
+
+  // 404 and not 403: a 403 would confirm the slug exists.
+  const author = await instance.inject({
+    method: "GET",
+    url: `/agents/${slug}`,
+    headers: await authHeader(db, player.id),
+  });
+  assert.equal(author.statusCode, 200, "the author must still see their own draft");
+  assert.equal(author.json().slug, slug);
+
+  // Once published, it is public again.
+  await instance.inject({
+    method: "POST",
+    url: `/agents/${created.json().id}/publish`,
+    headers: await authHeader(db, player.id),
+  });
+  const published = await instance.inject({ method: "GET", url: `/agents/${slug}` });
+  assert.equal(published.statusCode, 200);
+
+  await instance.close();
+  await db.close();
+});

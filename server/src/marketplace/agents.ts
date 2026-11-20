@@ -81,6 +81,29 @@ export async function findAgentBySlug(
 }
 
 /** The marketplace listing: most stars first. See ranking.ts for the rule. */
+/**
+ * An agent as a given viewer is allowed to see it.
+ *
+ * A draft belongs to its author. Anyone else gets null, which the caller
+ * turns into a 404 rather than a 403: a 403 would confirm that the slug
+ * exists, and a slug carries the agent's name.
+ *
+ * The rule lives here, not in the route, because a second caller would
+ * otherwise have to remember it. `viewerId` must be an id the caller has
+ * already authenticated — an id read straight off a request would make
+ * this check decorative.
+ */
+export async function agentVisibleTo(
+  db: Db,
+  slug: string,
+  viewerId: string | null,
+): Promise<Agent | null> {
+  const agent = await findAgentBySlug(db, slug);
+  if (!agent) return null;
+  if (agent.visibility === "published") return agent;
+  return viewerId !== null && agent.authorId === viewerId ? agent : null;
+}
+
 export async function topAgents(
   db: Db,
   opts: { limit?: number; offset?: number } = {},

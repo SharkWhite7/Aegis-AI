@@ -30,6 +30,7 @@ import { joinWaitlist } from "../waitlist/service.ts";
 import {
   createAgent,
   findAgentBySlug,
+  agentVisibleTo,
   setVisibility,
   starAgent,
   topAgents,
@@ -111,6 +112,17 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     if (scheme?.toLowerCase() !== "bearer") return null;
     const token = rest.join(" ").trim();
     return token.length > 0 ? token : null;
+  };
+
+  /**
+   * The signed-in player's id, or null.
+   *
+   * For a route a stranger may legitimately call, where being signed in
+   * changes what is returned rather than whether it is allowed.
+   */
+  const viewer = async (req: FastifyRequest): Promise<string | null> => {
+    const player = await authenticate(db, bearer(req));
+    return player?.id ?? null;
   };
 
   /** Resolves the signed-in player, or throws a 401. */
@@ -256,7 +268,9 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   app.get("/agents/:slug", async (req, reply) => {
     const { slug } = req.params as { slug: string };
-    const agent = await findAgentBySlug(db, slug);
+    // A draft is readable only by its author. Without this the slug alone
+    // handed a stranger the full personaBrief of an unpublished agent.
+    const agent = await agentVisibleTo(db, slug, await viewer(req));
     if (!agent) return reply.code(404).send({ error: "not_found", message: "agent not found" });
     return agent;
   });
