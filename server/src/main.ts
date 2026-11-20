@@ -13,6 +13,7 @@ import { buildApp } from "./http/app.ts";
 import { StubModelAdapter } from "./model/stub.ts";
 import { AnthropicModelAdapter, hasManagedCredential } from "./model/anthropic.ts";
 import type { ModelAdapter } from "./model/adapter.ts";
+import { devSignInAllowed } from "./auth/dev.ts";
 
 const dbPath = process.env["AEGIS_DB"] ?? "./aegis.db";
 const port = Number(process.env["PORT"] ?? 8787);
@@ -26,7 +27,17 @@ const model: ModelAdapter = live
   ? new AnthropicModelAdapter()
   : new StubModelAdapter();
 
-const app = buildApp({ db, model, logger: true });
+const devSignIn = devSignInAllowed(process.env);
+
+const app = buildApp({
+  db,
+  model,
+  logger: true,
+  devSignIn,
+  ...(process.env["AEGIS_SERVICE_TOKEN"]
+    ? { serviceToken: process.env["AEGIS_SERVICE_TOKEN"] }
+    : {}),
+});
 
 await app.listen({ port, host });
 
@@ -39,6 +50,13 @@ app.log.info(
   },
   "aegis server up",
 );
+
+if (devSignIn) {
+  app.log.warn(
+    "DEVELOPMENT SIGN-IN IS ON. POST /auth/dev signs anyone in as any " +
+      "handle, with no proof. This must never be reachable by anyone else.",
+  );
+}
 
 if (!live) {
   app.log.warn(

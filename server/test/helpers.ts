@@ -4,6 +4,7 @@ import { createPlayer } from "../src/players/repo.ts";
 import { seedBuiltinAgents } from "../src/marketplace/agents.ts";
 import { insertProfile } from "../src/profiles/repo.ts";
 import type { GameProfile, Player, ProfileFields } from "../src/domain/types.ts";
+import { issueSession } from "../src/auth/sessions.ts";
 
 /** A fresh in-memory database per test. No shared state between tests. */
 export const freshDb = (): Db => openSqlite(":memory:");
@@ -41,4 +42,18 @@ export async function seedWorld(db: Db): Promise<{
     modelId: "stub",
   });
   return { player, other, profile };
+}
+
+/**
+ * Signs a player in and returns the Authorization header for them.
+ *
+ * Tests go through the real session machinery rather than a header that
+ * names a player id, because that header no longer exists.
+ */
+export async function authHeader(
+  db: Db,
+  playerId: string,
+): Promise<{ authorization: string }> {
+  const { token } = await issueSession(db, playerId);
+  return { authorization: `Bearer ${token}` };
 }

@@ -38,6 +38,9 @@ export function mapError(err: unknown): Mapped {
   if (err instanceof ConflictError) {
     return { status: 409, body: { error: "conflict", message: err.message } };
   }
+  if (err instanceof UnauthorizedError) {
+    return { status: 401, body: { error: "unauthorized", message: err.message } };
+  }
   if (err instanceof ModelRefusedError) {
     // Not our bug and not the client's: the provider declined. 422 rather
     // than 500 so callers do not retry it as a transient failure.
@@ -47,4 +50,12 @@ export function mapError(err: unknown): Mapped {
     status: 500,
     body: { error: "internal", message: "an unexpected error occurred" },
   };
+}
+
+/** Thrown when a route needs a signed-in player and has none. */
+export class UnauthorizedError extends Error {
+  constructor(message = "sign in required") {
+    super(message);
+    this.name = "UnauthorizedError";
+  }
 }
