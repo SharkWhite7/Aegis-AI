@@ -13,7 +13,7 @@ free. When money arrives it is an additive migration, not a rewrite.
 ```bash
 cd server
 npm install
-npm test            # 75 tests, no network and no credential needed
+npm test            # 95 tests, no network and no credential needed
 npm run typecheck
 npm start           # http://127.0.0.1:8787
 ```
@@ -48,6 +48,9 @@ Built and tested:
   generated once per title and shared by every player.
 - **Memory + per-turn digest** — stored outside the model, injected every
   turn, bounded by a token budget.
+- **Session debrief** — one model call when a session ends that writes its
+  summary and extracts the memories to carry forward. This is the only
+  thing in the product that creates a memory.
 - **Marketplace** — authoring, publishing, stars, ranking by stars.
 - **Chat** — sessions and turns, assembling the four parts per turn.
 
@@ -103,6 +106,39 @@ stops fitting and the companion forgets without raising anything.
 four" — needs memories that can be contradicted and retired. Without
 supersession the digest accumulates contradictions and the companion gets
 *worse* as it accumulates.
+
+Memories are written by the **session debrief**: one model call at
+`endSession` that reads the transcript and returns both the summary and
+the memories to keep. One call rather than two because they read the same
+input and ought to agree; at session end rather than per turn because chat
+is latency-bound and memory's job is *across* sessions, not inside one.
+
+The debrief is riskier than the profile generator, for a reason worth
+stating plainly: **a memory is injected into every future turn, forever.**
+A hostile line in a transcript that got recorded as a memory would be a
+persistent prompt injection, re-delivered long after the session that
+planted it ended. Three defences, of which the second is the only hard
+guarantee:
+
+1. The prompt tells the model to record facts, never instructions.
+2. `enforceDebrief` caps how many memories one session may add, collapses
+   duplicates, and refuses any supersession whose target is not already a
+   live memory **of that same player**. Without that check a crafted
+   transcript could retire someone else's memories; a test asserts it
+   cannot, and that another player's memories never even enter the prompt.
+3. The digest frames the block as a record the companion keeps rather than
+   as instructions.
+
+Honest limit: defence 1 is a request, not a guarantee. Nothing here can
+structurally prove a sentence is a fact rather than an instruction, and
+pattern-matching for instruction-shaped text would reject real memories
+while missing rephrased ones. The caps and the ownership check bound the
+damage; they do not remove the category.
+
+The debrief is idempotent and cheap to skip. Closing an already-closed
+session does not re-run it, a session with no turns is closed without a
+model call, and `{"debrief": false}` closes one without spending.
+
 
 ### 3. The cache split is load-bearing
 
@@ -187,10 +223,11 @@ src/
   players/   player records — no key column, ever
   waitlist/  signup capture; no public counter
   profiles/  normalisation, the generator and its enforcement, storage
-  memory/    storage with supersession, and the pure digest assembler
+  memory/    storage with supersession, the pure digest assembler, and
+             the session debrief that actually fills it
   marketplace/ agents, stars, the ranking rule, the six built-ins
   chat/      prompt assembly (the four parts) and the turn loop
   model/     the model seam, deterministic stub, managed adapter
   http/      Fastify app, error mapping, rate limiting
-test/        75 tests; no network, no credential
+test/        95 tests; no network, no credential
 ```

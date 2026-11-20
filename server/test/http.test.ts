@@ -189,7 +189,11 @@ test("a full chat exchange: session, turn, transcript, end", async () => {
     payload: { summary: "talked about the docks" },
   });
   assert.equal(ended.statusCode, 200);
-  assert.equal(ended.json().summary, "talked about the docks");
+  assert.equal(ended.json().session.summary, "talked about the docks");
+  // Ending a session debriefs it, which is the only thing that writes
+  // memories. An explicit summary wins over the generated one.
+  assert.equal(ended.json().debrief.summarySource, "provided");
+  assert.equal(ended.json().debrief.memoriesStored, 1);
   await instance.close();
   await db.close();
 });
