@@ -17,6 +17,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { drain, type SpeakEvent } from "./adapter.ts";
 import type {
   ModelAdapter,
   SpeakRequest,
@@ -68,11 +69,13 @@ export class AnthropicModelAdapter implements ModelAdapter {
     this.id = this.#model;
   }
 
-  async speak(req: SpeakRequest): Promise<SpeakResult> {
-    // The stable half carries the cache breakpoint: game profile and agent
-    // voice do not change within a session, so they are a reusable prefix.
-    // The volatile half (memory digest, live context) is rebuilt per turn
-    // and must therefore sit after it, or it would invalidate the cache.
+  /**
+   * The stable half carries the cache breakpoint: game profile and agent
+   * voice do not change within a session, so they are a reusable prefix.
+   * The volatile half (memory digest, live context) is rebuilt per turn
+   * and must sit after it, or it would invalidate the cache every turn.
+   */
+  #request(req: SpeakRequest) {
     const system: Anthropic.TextBlockParam[] = [
       {
         type: "text",
@@ -81,32 +84,56 @@ export class AnthropicModelAdapter implements ModelAdapter {
       },
       { type: "text", text: req.systemVolatile },
     ];
-
-    const response = await this.#client.messages.create({
+    return {
       model: this.#model,
       max_tokens: req.maxTokens ?? 1024,
-      thinking: { type: "adaptive" },
+      thinking: { type: "adaptive" as const },
       output_config: { effort: this.#speakEffort },
       system,
       messages: req.messages.map((m) => ({
         role: m.role === "player" ? ("user" as const) : ("assistant" as const),
         content: m.text,
       })),
-    });
+    };
+  }
 
-    if (response.stop_reason === "refusal") {
-      return { text: "", modelId: response.model, refused: true };
+  /**
+   * Streaming is the primitive here, not an extra.
+   *
+   * Bindings checked against the installed SDK rather than recalled:
+   * `client.messages.stream()` returns a MessageStream that is an
+   * AsyncIterable of events and exposes finalMessage(); a text delta
+   * arrives as `content_block_delta` carrying `delta.text`.
+   */
+  async *speakStream(req: SpeakRequest): AsyncGenerator<SpeakEvent> {
+    const stream = this.#client.messages.stream(this.#request(req));
+
+    for await (const event of stream) {
+      if (
+        event.type === "content_block_delta" &&
+        event.delta.type === "text_delta"
+      ) {
+        yield { type: "delta", text: event.delta.text };
+      }
     }
 
-    return {
-      text: textOf(response.content),
-      modelId: response.model,
-      refused: false,
+    const final = await stream.finalMessage();
+    // A refusal arrives as a stop reason on a 200, so it is read here
+    // rather than caught: the caller must not put words in the
+    // companion's mouth, and partial text before a refusal is not a reply.
+    yield {
+      type: "done",
+      modelId: final.model,
+      refused: final.stop_reason === "refusal",
       usage: {
-        inputTokens: response.usage.input_tokens,
-        outputTokens: response.usage.output_tokens,
+        inputTokens: final.usage.input_tokens,
+        outputTokens: final.usage.output_tokens,
       },
     };
+  }
+
+  async speak(req: SpeakRequest): Promise<SpeakResult> {
+    return drain(this.speakStream(req));
   }
 
   async structured(req: StructuredRequest): Promise<StructuredResult> {

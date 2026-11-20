@@ -20,6 +20,7 @@
  * outright rather than left open.
  */
 
+import { Readable } from "node:stream";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import type { Db } from "../db/db.ts";
 import type { ModelAdapter } from "../model/adapter.ts";
@@ -37,7 +38,14 @@ import {
   agentsByAuthor,
   hasStarred,
 } from "../marketplace/agents.ts";
-import { endSession, recentTurns, startSession, takeTurn } from "../chat/service.ts";
+import {
+  endSession,
+  recentTurns,
+  startSession,
+  takeTurn,
+  takeTurnStream,
+  type TurnStreamEvent,
+} from "../chat/service.ts";
 import { remember } from "../memory/repo.ts";
 import { ensureProfile, findBySlug } from "../profiles/repo.ts";
 import { createPlayer, findPlayerById, findPlayerByHandle } from "../players/repo.ts";
@@ -358,6 +366,49 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     // A refusal is reported as one. The client decides what to show; we do
     // not put words in the companion's mouth.
     return reply.code(result.refused ? 422 : 200).send(result);
+  });
+
+  /**
+   * The same turn, streamed as newline-delimited JSON.
+   *
+   * NDJSON rather than Server-Sent Events because the request carries a
+   * body: EventSource is GET-only, so the client needs fetch either way,
+   * and NDJSON costs nothing to parse off a reader.
+   *
+   * The first event is pulled before the response begins. A turn can fail
+   * validation — unknown session, closed session, empty text — and once
+   * headers are out, a failure can only be a truncated 200. Pulling one
+   * event first means those still answer with a real status code.
+   */
+  app.post("/chat/sessions/:id/turns/stream", async (req, reply) => {
+    const playerId = await actor(req);
+    if (!spendModelCall(playerId, reply)) return reply;
+
+    const { id } = req.params as { id: string };
+    const body = (req.body ?? {}) as Record<string, unknown>;
+
+    const events = takeTurnStream(
+      db,
+      { sessionId: id, text: body["text"], liveContext: body["liveContext"] },
+      model,
+    );
+
+    // Throws here, before any header is sent, for anything invalid.
+    const first = await events.next();
+
+    async function* lines(): AsyncGenerator<string> {
+      if (!first.done) yield `${JSON.stringify(first.value)}\n`;
+      for await (const event of events) {
+        yield `${JSON.stringify(event satisfies TurnStreamEvent)}\n`;
+      }
+    }
+
+    reply.header("content-type", "application/x-ndjson; charset=utf-8");
+    reply.header("cache-control", "no-store");
+    // Readable.from calls the generator's return() when the response is
+    // destroyed, so a client that walks away still runs the finally that
+    // records what the companion said.
+    return Readable.from(lines());
   });
 
   app.get("/chat/sessions/:id/turns", async (req) => {

@@ -23,9 +23,18 @@ const db = openSqlite(dbPath);
 const seeded = await seedBuiltinAgents(db);
 
 const live = hasManagedCredential();
+// Spacing the stub's chunks makes streaming observable without a real
+// model. Development only: with a credential present the real adapter is
+// used and this has no effect.
+const stubChunkMs = Number(process.env["AEGIS_STUB_CHUNK_MS"] ?? 0);
+
 const model: ModelAdapter = live
   ? new AnthropicModelAdapter()
-  : new StubModelAdapter();
+  : new StubModelAdapter(
+      Number.isFinite(stubChunkMs) && stubChunkMs > 0
+        ? { chunkDelayMs: stubChunkMs }
+        : {},
+    );
 
 const devSignIn = devSignInAllowed(process.env);
 
