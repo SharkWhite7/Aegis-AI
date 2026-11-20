@@ -24,7 +24,15 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
           <Link href="/console" className="wordmark" aria-label={`${SITE.name} console`}>
             AEGIS<span className="text-magenta">/</span>AI
           </Link>
-          <span className="t-label text-bone-dim">Console</span>
+          <nav className="flex items-center gap-7">
+            <Link
+              href="/console/market"
+              className="t-label link-wipe text-bone-dim"
+            >
+              Market
+            </Link>
+            <span className="t-label text-bone-dim">Console</span>
+          </nav>
         </div>
       </header>
 

@@ -27,9 +27,9 @@ export class BackendUnavailableError extends Error {
   }
 }
 
-type Json = Record<string, unknown>;
+export type Json = Record<string, unknown>;
 
-async function call(
+export async function call(
   path: string,
   init: { method?: string; body?: Json; token?: string; service?: boolean } = {},
 ): Promise<{ status: number; body: Json }> {
