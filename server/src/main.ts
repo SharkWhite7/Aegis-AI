@@ -14,6 +14,7 @@ import { StubModelAdapter } from "./model/stub.ts";
 import { AnthropicModelAdapter, hasManagedCredential } from "./model/anthropic.ts";
 import type { ModelAdapter } from "./model/adapter.ts";
 import { devSignInAllowed } from "./auth/dev.ts";
+import { CEILING_ENV, ceilingsFromEnv } from "./limits/ceiling.ts";
 
 const dbPath = process.env["AEGIS_DB"] ?? "./aegis.db";
 const port = Number(process.env["PORT"] ?? 8787);
@@ -38,11 +39,17 @@ const model: ModelAdapter = live
 
 const devSignIn = devSignInAllowed(process.env);
 
+// Read before the server starts listening. A bad value here throws, which
+// is the point: an operator lowering a ceiling must not be handed the
+// default because of a typo.
+const ceilings = ceilingsFromEnv(process.env);
+
 const app = buildApp({
   db,
   model,
   logger: true,
   devSignIn,
+  ceilings,
   ...(process.env["AEGIS_SERVICE_TOKEN"]
     ? { serviceToken: process.env["AEGIS_SERVICE_TOKEN"] }
     : {}),
