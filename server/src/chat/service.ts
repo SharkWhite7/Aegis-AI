@@ -11,6 +11,12 @@
  */
 
 import type { Db } from "../db/db.ts";
+import {
+  checkCeiling,
+  recordSpend,
+  type CeilingVerdict,
+  type Ceilings,
+} from "../limits/ceiling.ts";
 import { newId, now } from "../domain/ids.ts";
 import type { Agent, GameProfile, Session, Turn, TurnRole } from "../domain/types.ts";
 import { requireString, optionalString } from "../domain/validate.ts";
@@ -88,6 +94,28 @@ export async function recentTurns(
   return rows.map(toTurn).reverse();
 }
 
+/**
+ * Thrown when a player has consumed their window's ceiling.
+ *
+ * Carries the verdict rather than a message alone so the HTTP layer can
+ * say which kind ran out and how much was consumed. A ceiling the player
+ * cannot see is indistinguishable from a bug.
+ */
+export class CeilingReachedError extends Error {
+  // A plain field, not a constructor parameter property: Node strips types
+  // rather than compiling them, so `readonly x` in a parameter list is not
+  // available here (tsconfig enforces it with erasableSyntaxOnly).
+  readonly verdict: Extract<CeilingVerdict, { allowed: false }>;
+
+  constructor(verdict: Extract<CeilingVerdict, { allowed: false }>) {
+    super(
+      `consumption ceiling reached: ${verdict.spent} of ${verdict.ceiling} ${verdict.kind}`,
+    );
+    this.name = "CeilingReachedError";
+    this.verdict = verdict;
+  }
+}
+
 export class SessionClosedError extends Error {
   constructor() {
     super("session has ended");
@@ -148,8 +176,17 @@ export async function startSession(
 
 // ── Taking a turn ────────────────────────────────────────────────────────
 
+export type TurnLimits = {
+  ceilings?: Ceilings;
+  windowMs?: number;
+  /** Injectable so a test does not have to wait a day. */
+  nowMs?: number;
+};
+
 export type TakeTurnInput = {
   sessionId: string;
+  /** Overrides for the consumption ceiling. Defaults when absent. */
+  limits?: TurnLimits;
   text: unknown;
   /** Player-reported, not observed. See prompt.ts. */
   liveContext?: unknown;
@@ -215,6 +252,17 @@ async function prepareTurn(
   if (!profile) throw new NotFoundError("game profile");
   const agent = await findAgentById(db, session.agentId);
   if (!agent) throw new NotFoundError("agent");
+
+  // The ceiling is checked here, before the player's turn is appended.
+  // A refused turn must leave no trace: an orphan player line would sit
+  // in the transcript unanswered forever, and every later turn would pay
+  // input tokens to carry it in the history.
+  const verdict = await checkCeiling(db, session.playerId, {
+    ...(input.limits?.ceilings ? { ceilings: input.limits.ceilings } : {}),
+    ...(input.limits?.windowMs !== undefined ? { windowMs: input.limits.windowMs } : {}),
+    ...(input.limits?.nowMs !== undefined ? { nowMs: input.limits.nowMs } : {}),
+  });
+  if (!verdict.allowed) throw new CeilingReachedError(verdict);
 
   // The player's turn is appended before the model is called. If the call
   // fails the player's words are still on the record, which is the
@@ -282,6 +330,7 @@ export async function* takeTurnStream(
   let spoken = "";
   let refused = false;
   let copilotTurn: Turn | null = null;
+  let usage: { inputTokens: number; outputTokens: number } | undefined;
 
   try {
     for await (const event of model.speakStream({
@@ -294,6 +343,7 @@ export async function* takeTurnStream(
         yield { type: "delta", text: event.text };
       } else {
         refused = event.refused;
+        usage = event.usage;
       }
     }
   } finally {
@@ -308,6 +358,30 @@ export async function* takeTurnStream(
         Date.now() - startedAt,
       );
       await markReferenced(db, prep.digest.includedIds);
+    }
+
+    // Metered from what the provider reported, refusal included: a
+    // declined request still consumed its input tokens and we were still
+    // charged for them.
+    //
+    // A KNOWN HOLE, recorded rather than papered over: when a consumer
+    // abandons the stream the provider's usage report may never arrive,
+    // and this then records nothing. Estimating it would put an invented
+    // number in a ledger whose only job is to be true. What bounds that
+    // gap is the per-minute rate limiter, not this.
+    if (usage) {
+      await recordSpend(db, {
+        playerId: prep.session.playerId,
+        sessionId: prep.session.id,
+        kind: "model_input_tokens",
+        units: usage.inputTokens,
+      });
+      await recordSpend(db, {
+        playerId: prep.session.playerId,
+        sessionId: prep.session.id,
+        kind: "model_output_tokens",
+        units: usage.outputTokens,
+      });
     }
   }
 

@@ -23,6 +23,7 @@
 import { Readable } from "node:stream";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import type { Db } from "../db/db.ts";
+import type { Ceilings } from "../limits/ceiling.ts";
 import type { ModelAdapter } from "../model/adapter.ts";
 import { mapError, UnauthorizedError } from "./errors.ts";
 import { fixedWindow, type RateLimiter } from "./ratelimit.ts";
@@ -62,6 +63,13 @@ import { slugify } from "../profiles/normalize.ts";
 export type AppOptions = {
   db: Db;
   model: ModelAdapter;
+  /**
+   * Per-player consumption ceilings. Defaults when absent. Separate from
+   * the rate limiter above: that one caps calls per minute, this one caps
+   * how much a single player can consume over a day.
+   */
+  ceilings?: Ceilings;
+  ceilingWindowMs?: number;
   /** Calls per window for routes that spend a model call. */
   modelCallsPerWindow?: number;
   windowMs?: number;
@@ -138,6 +146,13 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     const player = await authenticate(db, bearer(req));
     if (!player) throw new UnauthorizedError();
     return player.id;
+  };
+
+  // Built once: the same ceiling applies to the batch and streaming paths,
+  // and two copies would eventually disagree.
+  const turnLimits = {
+    ...(opts.ceilings ? { ceilings: opts.ceilings } : {}),
+    ...(opts.ceilingWindowMs !== undefined ? { windowMs: opts.ceilingWindowMs } : {}),
   };
 
   const spendModelCall = (key: string, reply: { code: (n: number) => unknown; send: (b: unknown) => unknown }): boolean => {
@@ -374,6 +389,7 @@ export function buildApp(opts: AppOptions): FastifyInstance {
         sessionId: id,
         text: body["text"],
         liveContext: body["liveContext"],
+        limits: turnLimits,
       },
       model,
     );
@@ -403,7 +419,12 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
     const events = takeTurnStream(
       db,
-      { sessionId: id, text: body["text"], liveContext: body["liveContext"] },
+      {
+        sessionId: id,
+        text: body["text"],
+        liveContext: body["liveContext"],
+        limits: turnLimits,
+      },
       model,
     );
 

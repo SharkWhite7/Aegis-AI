@@ -175,3 +175,35 @@ CREATE TABLE IF NOT EXISTS memory_entry (
 -- The digest's hot path: live memories for a player, most salient first.
 CREATE INDEX IF NOT EXISTS memory_live_idx
   ON memory_entry (player_id, superseded_by, salience DESC, created_at DESC);
+
+-- ── Consumption ─────────────────────────────────────────────────────────
+-- A rate limiter caps calls per minute. It does not cap consumption, and a
+-- voice turn costs a model call *plus* speech synthesis, so one abusive
+-- session multiplies. Inference is managed — AEGIS AI holds the credential
+-- and pays — so that cost lands here rather than on the player, which is
+-- what makes a ceiling part of the feature instead of housekeeping.
+--
+-- Metered in UNITS, not money, and the rule at the top of this file still
+-- holds: there is no money here. A price per token is a number we do not
+-- have and would have to invent, and an invented price makes an invented
+-- ceiling. Tokens and characters are what providers actually report, so
+-- they are what we count.
+--
+-- Append-only: a correction is another row, which is why units is signed.
+-- An UPDATE here would erase the record of what was consumed.
+CREATE TABLE IF NOT EXISTS spend_entry (
+  id          TEXT PRIMARY KEY,
+  player_id   TEXT NOT NULL REFERENCES player(id) ON DELETE CASCADE,
+  -- Kept for attribution, cleared rather than cascading: deleting a session
+  -- must not erase the record that its turns were paid for.
+  session_id  TEXT REFERENCES session(id) ON DELETE SET NULL,
+  kind        TEXT NOT NULL CHECK (kind IN
+                ('model_input_tokens','model_output_tokens',
+                 'tts_characters','stt_seconds')),
+  units       INTEGER NOT NULL,
+  created_at  TEXT NOT NULL
+);
+
+-- The ceiling's hot path: one player's units of one kind inside a window.
+CREATE INDEX IF NOT EXISTS spend_window_idx
+  ON spend_entry (player_id, kind, created_at);
