@@ -20,8 +20,10 @@
  * outright rather than left open.
  */
 
+import { Readable } from "node:stream";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import type { Db } from "../db/db.ts";
+import type { Ceilings } from "../limits/ceiling.ts";
 import type { ModelAdapter } from "../model/adapter.ts";
 import { mapError, UnauthorizedError } from "./errors.ts";
 import { fixedWindow, type RateLimiter } from "./ratelimit.ts";
@@ -30,6 +32,7 @@ import { joinWaitlist } from "../waitlist/service.ts";
 import {
   createAgent,
   findAgentBySlug,
+  agentVisibleTo,
   setVisibility,
   starAgent,
   topAgents,
@@ -37,7 +40,14 @@ import {
   agentsByAuthor,
   hasStarred,
 } from "../marketplace/agents.ts";
-import { endSession, recentTurns, startSession, takeTurn } from "../chat/service.ts";
+import {
+  endSession,
+  recentTurns,
+  startSession,
+  takeTurn,
+  takeTurnStream,
+  type TurnStreamEvent,
+} from "../chat/service.ts";
 import { remember } from "../memory/repo.ts";
 import { ensureProfile, findBySlug } from "../profiles/repo.ts";
 import { createPlayer, findPlayerById, findPlayerByHandle } from "../players/repo.ts";
@@ -53,6 +63,13 @@ import { slugify } from "../profiles/normalize.ts";
 export type AppOptions = {
   db: Db;
   model: ModelAdapter;
+  /**
+   * Per-player consumption ceilings. Defaults when absent. Separate from
+   * the rate limiter above: that one caps calls per minute, this one caps
+   * how much a single player can consume over a day.
+   */
+  ceilings?: Ceilings;
+  ceilingWindowMs?: number;
   /** Calls per window for routes that spend a model call. */
   modelCallsPerWindow?: number;
   windowMs?: number;
@@ -113,11 +130,29 @@ export function buildApp(opts: AppOptions): FastifyInstance {
     return token.length > 0 ? token : null;
   };
 
+  /**
+   * The signed-in player's id, or null.
+   *
+   * For a route a stranger may legitimately call, where being signed in
+   * changes what is returned rather than whether it is allowed.
+   */
+  const viewer = async (req: FastifyRequest): Promise<string | null> => {
+    const player = await authenticate(db, bearer(req));
+    return player?.id ?? null;
+  };
+
   /** Resolves the signed-in player, or throws a 401. */
   const actor = async (req: FastifyRequest): Promise<string> => {
     const player = await authenticate(db, bearer(req));
     if (!player) throw new UnauthorizedError();
     return player.id;
+  };
+
+  // Built once: the same ceiling applies to the batch and streaming paths,
+  // and two copies would eventually disagree.
+  const turnLimits = {
+    ...(opts.ceilings ? { ceilings: opts.ceilings } : {}),
+    ...(opts.ceilingWindowMs !== undefined ? { windowMs: opts.ceilingWindowMs } : {}),
   };
 
   const spendModelCall = (key: string, reply: { code: (n: number) => unknown; send: (b: unknown) => unknown }): boolean => {
@@ -256,7 +291,9 @@ export function buildApp(opts: AppOptions): FastifyInstance {
 
   app.get("/agents/:slug", async (req, reply) => {
     const { slug } = req.params as { slug: string };
-    const agent = await findAgentBySlug(db, slug);
+    // A draft is readable only by its author. Without this the slug alone
+    // handed a stranger the full personaBrief of an unpublished agent.
+    const agent = await agentVisibleTo(db, slug, await viewer(req));
     if (!agent) return reply.code(404).send({ error: "not_found", message: "agent not found" });
     return agent;
   });
@@ -352,12 +389,61 @@ export function buildApp(opts: AppOptions): FastifyInstance {
         sessionId: id,
         text: body["text"],
         liveContext: body["liveContext"],
+        limits: turnLimits,
       },
       model,
     );
     // A refusal is reported as one. The client decides what to show; we do
     // not put words in the companion's mouth.
     return reply.code(result.refused ? 422 : 200).send(result);
+  });
+
+  /**
+   * The same turn, streamed as newline-delimited JSON.
+   *
+   * NDJSON rather than Server-Sent Events because the request carries a
+   * body: EventSource is GET-only, so the client needs fetch either way,
+   * and NDJSON costs nothing to parse off a reader.
+   *
+   * The first event is pulled before the response begins. A turn can fail
+   * validation — unknown session, closed session, empty text — and once
+   * headers are out, a failure can only be a truncated 200. Pulling one
+   * event first means those still answer with a real status code.
+   */
+  app.post("/chat/sessions/:id/turns/stream", async (req, reply) => {
+    const playerId = await actor(req);
+    if (!spendModelCall(playerId, reply)) return reply;
+
+    const { id } = req.params as { id: string };
+    const body = (req.body ?? {}) as Record<string, unknown>;
+
+    const events = takeTurnStream(
+      db,
+      {
+        sessionId: id,
+        text: body["text"],
+        liveContext: body["liveContext"],
+        limits: turnLimits,
+      },
+      model,
+    );
+
+    // Throws here, before any header is sent, for anything invalid.
+    const first = await events.next();
+
+    async function* lines(): AsyncGenerator<string> {
+      if (!first.done) yield `${JSON.stringify(first.value)}\n`;
+      for await (const event of events) {
+        yield `${JSON.stringify(event satisfies TurnStreamEvent)}\n`;
+      }
+    }
+
+    reply.header("content-type", "application/x-ndjson; charset=utf-8");
+    reply.header("cache-control", "no-store");
+    // Readable.from calls the generator's return() when the response is
+    // destroyed, so a client that walks away still runs the finally that
+    // records what the companion said.
+    return Readable.from(lines());
   });
 
   app.get("/chat/sessions/:id/turns", async (req) => {

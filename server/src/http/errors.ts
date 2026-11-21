@@ -8,11 +8,24 @@
 import { ValidationError } from "../domain/validate.ts";
 import { ConflictError } from "../db/db.ts";
 import { ForbiddenError, NotFoundError } from "../marketplace/agents.ts";
-import { SessionClosedError } from "../chat/service.ts";
+import { CeilingReachedError, SessionClosedError } from "../chat/service.ts";
 import { UnusableTitleError } from "../profiles/repo.ts";
 import { ModelRefusedError } from "../model/adapter.ts";
 
-export type ErrorBody = { error: string; message: string; field?: string };
+export type ErrorBody = {
+  error: string;
+  message: string;
+  field?: string;
+  /**
+   * Set only by the consumption ceiling. A limit a caller cannot read is
+   * indistinguishable from a bug, so the response says which kind ran out,
+   * how much was consumed, and over what window.
+   */
+  kind?: string;
+  spent?: number;
+  ceiling?: number;
+  windowStartedAt?: string;
+};
 
 export type Mapped = { status: number; body: ErrorBody };
 
@@ -34,6 +47,22 @@ export function mapError(err: unknown): Mapped {
   }
   if (err instanceof SessionClosedError) {
     return { status: 409, body: { error: "session_closed", message: err.message } };
+  }
+  if (err instanceof CeilingReachedError) {
+    // 429 and not 402: nothing is for sale, so "payment required" would be
+    // a claim about a product that does not exist. The window rolling is
+    // what clears this, so it belongs with the other "come back later".
+    return {
+      status: 429,
+      body: {
+        error: "ceiling_reached",
+        message: err.message,
+        kind: err.verdict.kind,
+        spent: err.verdict.spent,
+        ceiling: err.verdict.ceiling,
+        windowStartedAt: err.verdict.windowStartedAt,
+      },
+    };
   }
   if (err instanceof ConflictError) {
     return { status: 409, body: { error: "conflict", message: err.message } };

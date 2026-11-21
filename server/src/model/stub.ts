@@ -12,6 +12,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { drain, type SpeakEvent } from "./adapter.ts";
 import type {
   ModelAdapter,
   SpeakRequest,
@@ -28,6 +29,8 @@ export type StubOptions = {
   refuse?: boolean;
   /** Override the structured payload, to exercise validation failures. */
   structuredPayload?: unknown;
+  /** Pause between chunks, so a test can abandon a stream mid-reply. */
+  chunkDelayMs?: number;
 };
 
 export class StubModelAdapter implements ModelAdapter {
@@ -38,20 +41,36 @@ export class StubModelAdapter implements ModelAdapter {
     this.#opts = opts;
   }
 
-  async speak(req: SpeakRequest): Promise<SpeakResult> {
+  /**
+   * Yields the reply in several pieces so consumers that assume one chunk
+   * are caught by the tests rather than in production.
+   */
+  async *speakStream(req: SpeakRequest): AsyncGenerator<SpeakEvent> {
     if (this.#opts.refuse) {
-      return { text: "", modelId: this.id, refused: true };
+      yield { type: "done", modelId: this.id, refused: true };
+      return;
     }
     const last = req.messages.at(-1);
     const h = digest(
       req.systemStable + req.systemVolatile + (last?.text ?? ""),
     ).slice(0, 8);
-    return {
-      text: `stub reply ${h}`,
+
+    for (const piece of ["stub ", "reply ", h]) {
+      if (this.#opts.chunkDelayMs) {
+        await new Promise((r) => setTimeout(r, this.#opts.chunkDelayMs));
+      }
+      yield { type: "delta", text: piece };
+    }
+    yield {
+      type: "done",
       modelId: this.id,
       refused: false,
       usage: { inputTokens: 0, outputTokens: 0 },
     };
+  }
+
+  async speak(req: SpeakRequest): Promise<SpeakResult> {
+    return drain(this.speakStream(req));
   }
 
   async structured(req: StructuredRequest): Promise<StructuredResult> {

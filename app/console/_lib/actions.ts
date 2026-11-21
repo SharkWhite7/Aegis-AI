@@ -11,12 +11,10 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { SESSION_COOKIE } from "./config";
 import {
   endSession as endSessionCall,
   startSession as startSessionCall,
-  takeTurn as takeTurnCall,
   whoAmI,
 } from "./backend";
 
@@ -63,36 +61,6 @@ export async function beginSession(
   // redirect() throws, so it must sit outside the try above or it would be
   // caught and reported as a failure.
   redirect(`/console/play/${sessionId}`);
-}
-
-export async function sendTurn(
-  _previous: FormState,
-  form: FormData,
-): Promise<FormState> {
-  const auth = await token();
-  if (!auth) return { error: "You are not signed in." };
-
-  const sessionId = String(form.get("sessionId") ?? "");
-  const text = String(form.get("text") ?? "").trim();
-  if (!sessionId) return { error: "No session." };
-  if (text.length === 0) return { error: null };
-
-  try {
-    const result = await takeTurnCall(auth, sessionId, text);
-    if (result.refused) {
-      // The model declined. Nothing is put in the companion's mouth.
-      return { error: "It did not answer that one." };
-    }
-  } catch (cause) {
-    return {
-      error: cause instanceof Error ? cause.message : "The turn did not go through.",
-    };
-  }
-  // Without this the turn is stored and the screen never shows it: the
-  // server component that renders the transcript does not re-run just
-  // because an action returned.
-  revalidatePath(`/console/play/${sessionId}`);
-  return { error: null };
 }
 
 export async function finishSession(
